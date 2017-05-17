@@ -3,6 +3,8 @@
 
 #include <string>
 #include <ostream>
+#include <istream>
+#include <vector>
 
 struct Object {
 	enum Type {
@@ -43,8 +45,9 @@ struct ObjectList : public Object {
 	struct Cons *value;
 
 	ObjectList(int length, ...);
+	ObjectList(const std::vector<Object*> &_value);
 };
 
 std::ostream &operator<<(std::ostream &o, const Object* object);
-
+std::istream &operator>>(std::istream &i, Object *&object);
 #endif

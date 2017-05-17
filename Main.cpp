@@ -4,9 +4,12 @@
 
 int main(int argc, char *argv[])
 {
-	Object *obj = new ObjectList(3, new ObjectString("foo"), new ObjectAtom("bar"), new ObjectList(2, new ObjectString("baz"), new ObjectInt(5)));
+	Object *obj;
 
-	std::cout << obj << std::endl;
+	do {
+		std::cin >> obj;
+		std::cout << obj << std::endl;
+	} while (obj);
 
 	return 0;
 }
