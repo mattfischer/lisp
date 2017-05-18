@@ -106,6 +106,51 @@ Object *evalFunction(Object *object)
 		ret->setInt(a->intValue() + b->intValue());
 		return ret;
 	}
+	else if (!std::strcmp(car->stringValue(), "-")) {
+		if (!checkLength(object, 3)) {
+			return 0;
+		}
+
+		Object *a = eval(listItem(object, 1));
+		Object *b = eval(listItem(object, 2));
+		if (!checkType(a, Object::TypeInt) || !checkType(b, Object::TypeInt)) {
+			return 0;
+		}
+
+		Object *ret = new Object();
+		ret->setInt(a->intValue() - b->intValue());
+		return ret;
+	}
+	else if (!std::strcmp(car->stringValue(), "*")) {
+		if (!checkLength(object, 3)) {
+			return 0;
+		}
+
+		Object *a = eval(listItem(object, 1));
+		Object *b = eval(listItem(object, 2));
+		if (!checkType(a, Object::TypeInt) || !checkType(b, Object::TypeInt)) {
+			return 0;
+		}
+
+		Object *ret = new Object();
+		ret->setInt(a->intValue() * b->intValue());
+		return ret;
+	}
+	else if (!std::strcmp(car->stringValue(), "/")) {
+		if (!checkLength(object, 3)) {
+			return 0;
+		}
+
+		Object *a = eval(listItem(object, 1));
+		Object *b = eval(listItem(object, 2));
+		if (!checkType(a, Object::TypeInt) || !checkType(b, Object::TypeInt)) {
+			return 0;
+		}
+
+		Object *ret = new Object();
+		ret->setInt(a->intValue() / b->intValue());
+		return ret;
+	}
 
 	std::cerr << "Error: No function " << car->stringValue() << std::endl;
 	return 0;
