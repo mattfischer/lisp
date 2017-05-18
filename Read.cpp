@@ -31,7 +31,8 @@ Object *read(std::istream &i)
 		int value;
 		i.unget();
 		i >> value;
-		object = new ObjectInt(value);
+		object = new Object();
+		object->setInt(value);
 	}
 	else if (std::isalpha(c)) {
 		std::string value;
@@ -49,7 +50,8 @@ Object *read(std::istream &i)
 			object = 0;
 		}
 		else {
-			object = new ObjectAtom(value);
+			object = new Object();
+			object->setAtom(value.c_str());
 		}
 	}
 	else if (c == '\"')
@@ -62,11 +64,12 @@ Object *read(std::istream &i)
 			}
 			value.push_back(c);
 		}
-		object = new ObjectString(value);
+		object = new Object();
+		object->setString(value.c_str());
 	}
 	else if (c == '(')
 	{
-		std::vector<Object*> objects;
+		Object *prev = 0;
 		while (true) {
 			eatWhitespace(i);
 			c = i.get();
@@ -74,10 +77,16 @@ Object *read(std::istream &i)
 				break;
 			}
 			i.unget();
-			objects.push_back(read(i));
+			Object *car = read(i);
+			Object *cons = new Object();
+			cons->setCons(car, 0);
+			if (prev) {
+				prev->setCons(prev->carValue(), cons);
+			} else {
+				object = cons;
+			} 
+			prev = cons;
 		}
-
-		object = new ObjectList(objects);
 	}
 
 	return object;

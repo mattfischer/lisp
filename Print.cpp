@@ -7,26 +7,26 @@ void print(std::ostream &o, const Object *object)
 		return;
 	}
 
-	switch (object->type) {
+	switch (object->type()) {
 	case Object::TypeInt:
-		o << ((ObjectInt*)object)->value;
+		o << object->intValue();
 		break;
 
 	case Object::TypeString:
-		o << "\"" << ((ObjectString*)object)->value << "\"";
+		o << "\"" << object->stringValue() << "\"";
 		break;
 
 	case Object::TypeAtom:
-		o << ((ObjectAtom*)object)->value;
+		o << object->stringValue();
 		break;
 
-	case Object::TypeList:
+	case Object::TypeCons:
 	{
+		const Object *cons = object;
 		o << "(";
-		Cons *cons = ((ObjectList*)object)->value;
 		while (cons) {
-			print(o, cons->car);
-			cons = cons->cdr;
+			print(o, cons->carValue());
+			cons = cons->cdrValue();
 			if (cons) {
 				o << " ";
 			}

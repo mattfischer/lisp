@@ -1,70 +1,66 @@
 #include "Object.hpp"
 
-#include <stdarg.h>
+#include <string.h>
 
-ObjectInt::ObjectInt(int _value)
+Object::Type Object::type() const
 {
-	type = Object::TypeInt;
-	value = _value;
+	return mType;
 }
 
-ObjectString::ObjectString(const std::string &_value)
+void Object::setInt(int value)
 {
-	type = Object::TypeString;
-	value = _value;
+	mType = TypeInt;
+	mData.intValue = value;
 }
 
-ObjectAtom::ObjectAtom(const std::string &_value)
+void Object::setString(const char *value)
 {
-	type = Object::TypeAtom;
-	value = _value;
+	mType = TypeString;
+	mData.stringValue = strdup(value);
 }
 
-ObjectList::ObjectList(int length, ...)
+void Object::setAtom(const char *value)
 {
-	type = Object::TypeList;
+	mType = TypeAtom;
+	mData.stringValue = strdup(value);
+}
 
-	va_list ap;
-	va_start(ap, length);
-	int i = 0;
-	Cons *prevCons = 0;
-	while (i < length) {
-		Cons *cons = new Cons;
-		cons->car = va_arg(ap, Object*);
+void Object::setCons(Object *car, Object *cdr)
+{
+	mType = TypeCons;
+	mData.consValue.car = car;
+	mData.consValue.cdr = cdr;
+}
 
-		if (prevCons) {
-			prevCons->cdr = cons;
-		}
-		else {
-			value = cons;
-		}
-		prevCons = cons;
-		i++;
+int Object::intValue() const
+{
+	return mData.intValue;
+}
+
+const char *Object::stringValue() const
+{
+	return mData.stringValue;
+}
+
+Object *Object::carValue() const
+{
+	return mData.consValue.car;
+}
+
+Object *Object::cdrValue() const
+{
+	return mData.consValue.cdr;
+}
+
+void Object::dispose()
+{
+	switch (mType) {
+	case TypeString:
+	case TypeAtom:
+		free(mData.stringValue);
+		break;
+
+	default:
+		break;
 	}
-
-	va_end(ap);
-	prevCons->cdr = 0;
-}
-
-ObjectList::ObjectList(const std::vector<Object*> &_value)
-{
-	type = Object::TypeList;
-
-	int i = 0;
-	Cons *prevCons = 0;
-	while (i < _value.size()) {
-		Cons *cons = new Cons;
-		cons->car = _value[i];
-
-		if (prevCons) {
-			prevCons->cdr = cons;
-		}
-		else {
-			value = cons;
-		}
-		prevCons = cons;
-		i++;
-	}
-
-	prevCons->cdr = 0;
 }

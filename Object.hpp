@@ -4,46 +4,38 @@
 #include <string>
 #include <vector>
 
-struct Object {
+class Object {
+public:
 	enum Type {
+		TypeNone,
 		TypeInt,
 		TypeString,
 		TypeAtom,
-		TypeList
+		TypeCons
 	};
 
-	Type type;
+	Type type() const;
 
-};
+	void setInt(int value);
+	void setString(const char *value);
+	void setAtom(const char *value);
+	void setCons(Object *car, Object *cdr);
 
-struct ObjectInt : public Object {
-	int value;
+	int intValue() const;
+	const char *stringValue() const;
+	Object *carValue() const;
+	Object *cdrValue() const;
 
-	ObjectInt(int _value);
-};
+	void dispose();
 
-struct ObjectString : public Object {
-	std::string value;
+private:
+	Type mType;
 
-	ObjectString(const std::string &_value);
-};
-
-struct ObjectAtom : public Object {
-	std::string value;
-
-	ObjectAtom(const std::string &_value);
-};
-
-struct Cons {
-	Object *car;
-	Cons *cdr;
-};
-
-struct ObjectList : public Object {
-	struct Cons *value;
-
-	ObjectList(int length, ...);
-	ObjectList(const std::vector<Object*> &_value);
+	union {
+		int intValue;
+		char *stringValue;
+		struct { Object *car; Object *cdr; } consValue;
+	} mData;
 };
 
 #endif
