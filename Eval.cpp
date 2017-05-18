@@ -96,8 +96,8 @@ Object *evalFunction(Object *object)
 			return 0;
 		}
 
-		Object *a = listItem(object, 1);
-		Object *b = listItem(object, 2);
+		Object *a = eval(listItem(object, 1));
+		Object *b = eval(listItem(object, 2));
 		if (!checkType(a, Object::TypeInt) || !checkType(b, Object::TypeInt)) {
 			return 0;
 		}
