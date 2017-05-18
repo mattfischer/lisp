@@ -36,3 +36,9 @@ void print(std::ostream &o, const Object *object)
 	}
 	}
 }
+
+std::ostream &operator<<(std::ostream &o, const Object *object)
+{
+	print(o, object);
+	return o;
+}

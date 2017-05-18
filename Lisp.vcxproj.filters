@@ -19,6 +19,9 @@
     <ClCompile Include="Read.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Eval.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Object.hpp">
@@ -28,6 +31,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Read.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Eval.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

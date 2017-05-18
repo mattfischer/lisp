@@ -1,6 +1,7 @@
 #include "Object.hpp"
 #include "Print.hpp"
 #include "Read.hpp"
+#include "Eval.hpp"
 
 #include <iostream>
 
@@ -10,8 +11,8 @@ int main(int argc, char *argv[])
 
 	do {
 		obj = read(std::cin);
-		print(std::cout, obj);
-		std::cout << std::endl;
+		obj = eval(obj);
+		std::cout << obj << std::endl;
 	} while (obj);
 
 	return 0;

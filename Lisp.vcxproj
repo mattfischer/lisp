@@ -97,12 +97,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Eval.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="Print.cpp" />
     <ClCompile Include="Read.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Eval.hpp" />
     <ClInclude Include="Object.hpp" />
     <ClInclude Include="Print.hpp" />
     <ClInclude Include="Read.hpp" />
