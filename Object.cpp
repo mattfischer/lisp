@@ -70,45 +70,6 @@ ObjectList::ObjectList(const std::vector<Object*> &_value)
 	prevCons->cdr = 0;
 }
 
-std::ostream &operator<<(std::ostream &o, const Object *object)
-{
-	if (!object) {
-		o << "nil";
-		return o;
-	}
-
-	switch (object->type) {
-	case Object::TypeInt:
-		o << ((ObjectInt*)object)->value;
-		break;
-
-	case Object::TypeString:
-		o << "\"" << ((ObjectString*)object)->value << "\"";
-		break;
-
-	case Object::TypeAtom:
-		o << ((ObjectAtom*)object)->value;
-		break;
-
-	case Object::TypeList:
-	{
-		o << "(";
-		Cons *cons = ((ObjectList*)object)->value;
-		while (cons) {
-			o << cons->car;
-			cons = cons->cdr;
-			if (cons) {
-				o << " ";
-			}
-		}
-		o << ")";
-		break;
-	}
-	}
-
-	return o;
-}
-
 void eatWhitespace(std::istream &i)
 {
 	while (!i.fail() && !i.eof())

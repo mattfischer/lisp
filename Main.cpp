@@ -1,4 +1,5 @@
 #include "Object.hpp"
+#include "Print.hpp"
 
 #include <iostream>
 
@@ -8,7 +9,9 @@ int main(int argc, char *argv[])
 
 	do {
 		std::cin >> obj;
-		std::cout << obj << std::endl;
+
+		print(std::cout, obj);
+		std::cout << std::endl;
 	} while (obj);
 
 	return 0;

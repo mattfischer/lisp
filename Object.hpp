@@ -48,6 +48,5 @@ struct ObjectList : public Object {
 	ObjectList(const std::vector<Object*> &_value);
 };
 
-std::ostream &operator<<(std::ostream &o, const Object* object);
 std::istream &operator>>(std::istream &i, Object *&object);
 #endif
