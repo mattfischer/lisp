@@ -100,10 +100,12 @@
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="Print.cpp" />
+    <ClCompile Include="Read.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Object.hpp" />
     <ClInclude Include="Print.hpp" />
+    <ClInclude Include="Read.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -2,8 +2,6 @@
 #define OBJECT_HPP
 
 #include <string>
-#include <ostream>
-#include <istream>
 #include <vector>
 
 struct Object {
@@ -48,5 +46,4 @@ struct ObjectList : public Object {
 	ObjectList(const std::vector<Object*> &_value);
 };
 
-std::istream &operator>>(std::istream &i, Object *&object);
 #endif
