@@ -34,26 +34,6 @@ Object *read(std::istream &i)
 		object = new Object();
 		object->setInt(value);
 	}
-	else if (std::isalpha(c)) {
-		std::string value;
-		i.unget();
-		while (!i.fail() && !i.eof()) {
-			c = i.get();
-			if (!std::isalpha(c)) {
-				i.unget();
-				break;
-			}
-			value.push_back(c);
-		}
-
-		if (value == "nil") {
-			object = 0;
-		}
-		else {
-			object = new Object();
-			object->setAtom(value.c_str());
-		}
-	}
 	else if (c == '\"')
 	{
 		std::string value;
@@ -86,6 +66,26 @@ Object *read(std::istream &i)
 				object = cons;
 			} 
 			prev = cons;
+		}
+	}
+	else {
+		std::string value;
+		i.unget();
+		while (!i.fail() && !i.eof()) {
+			c = i.get();
+			if (c == ')' || std::isspace(c)) {
+				i.unget();
+				break;
+			}
+			value.push_back(c);
+		}
+
+		if (value == "nil") {
+			object = 0;
+		}
+		else {
+			object = new Object();
+			object->setAtom(value.c_str());
 		}
 	}
 
