@@ -41,7 +41,15 @@ Object *Context::read(std::istream &i)
 
 	char c = i.get();
 
-	if (std::isdigit(c)) {
+	if (c == '\'') {
+		object = new Object();
+		Object *car = new Object();
+		car->setAtom("quote");
+		Object *cdr = new Object();
+		cdr->setCons(read(i), 0);
+		object->setCons(car, cdr);
+	}
+	else if (std::isdigit(c)) {
 		int value;
 		i.unget();
 		i >> value;
