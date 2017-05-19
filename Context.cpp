@@ -315,16 +315,22 @@ Object *Context::evalCons(Object *object)
 	}
 	else if (name == "setq") {
 		Object *cons = object->cdrValue();
-		checkType(cons, Object::TypeCons);
-		checkType(cons->cdrValue(), Object::TypeCons);
+		Object *ret = 0;
+		while (cons) {
+			checkType(cons, Object::TypeCons);
 
-		Object *name = cons->carValue();
-		checkType(name, Object::TypeAtom);
+			Object *name = cons->carValue();
+			checkType(name, Object::TypeAtom);
 
-		Object *value = eval(cons->cdrValue()->carValue());
+			cons = cons->cdrValue();
+			checkType(cons, Object::TypeCons);
+			ret = eval(cons->carValue());
 
-		setVariable(name->stringValue(), value);
-		return value;
+			setVariable(name->stringValue(), ret);
+
+			cons = cons->cdrValue();
+		}
+		return ret;
 	}
 	else if (name == "quote") {
 		checkType(object->cdrValue(), Object::TypeCons);
