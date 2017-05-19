@@ -19,6 +19,7 @@ public:
 private:
 	Object *evalAtom(Object *object);
 	Object *evalCons(Object *object);
+	Object *evalLambda(Object *function, Object *args);
 	void evalArgs(Object *object, int length, ...);
 	void checkType(Object *object, Object::Type type);
 

@@ -235,6 +235,10 @@ Object *Context::evalCons(Object *object)
 {
 	Object *car = object->carValue();
 
+	if (car->type() == Object::TypeCons) {
+		return evalLambda(car, object->cdrValue());
+	}
+
 	checkType(car, Object::TypeAtom);
 
 	std::string name(car->stringValue());
@@ -318,6 +322,40 @@ Object *Context::evalCons(Object *object)
 	std::stringstream ss;
 	ss << "No function " << car->stringValue() << " defined";
 	throw Error(ss.str());
+}
+
+Object *Context::evalLambda(Object *function, Object *args)
+{
+	checkType(function->carValue(), Object::Type::TypeAtom);
+	if (std::string(function->carValue()->stringValue()) != "lambda") {
+		std::stringstream ss;
+		ss << "Function call requires lambda expression, got " << function;
+		throw Error(ss.str());
+	}
+
+	Object *varsCons = function->cdrValue();
+	std::map<std::string, Object*> vars;
+	Object *varCons = varsCons->carValue();
+	checkType(varCons, Object::TypeCons);
+	Object *argCons = args;
+	for (; varCons && argCons; varCons = varCons->cdrValue(), argCons = argCons->cdrValue()) {
+		checkType(varCons->carValue(), Object::TypeAtom);
+		vars[varCons->carValue()->stringValue()] = eval(argCons->carValue());
+	}
+
+	if (varCons || argCons) {
+		std::stringstream ss;
+		ss << "Incorrect number of arguments to function " << function << ": " << args;
+		throw Error(ss.str());
+	}
+
+	Context context(this, std::move(vars));
+	Object *ret = 0;
+	for (Object *cons = varsCons->cdrValue(); cons; cons = cons->cdrValue()) {
+		ret = context.eval(cons->carValue());
+	}
+
+	return ret;
 }
 
 Object *Context::getVariable(const std::string &name)
