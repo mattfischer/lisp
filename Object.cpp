@@ -7,6 +7,16 @@ Object::Type Object::type() const
 	return mType;
 }
 
+void Object::setNone()
+{
+	mType = TypeNone;
+}
+
+void Object::setT()
+{
+	mType = TypeT;
+}
+
 void Object::setInt(int value)
 {
 	mType = TypeInt;

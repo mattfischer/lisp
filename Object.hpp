@@ -8,6 +8,7 @@ class Object {
 public:
 	enum Type {
 		TypeNone,
+		TypeT,
 		TypeInt,
 		TypeString,
 		TypeAtom,
@@ -16,6 +17,8 @@ public:
 
 	Type type() const;
 
+	void setNone();
+	void setT();
 	void setInt(int value);
 	void setString(const char *value);
 	void setAtom(const char *value);

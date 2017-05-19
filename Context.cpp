@@ -8,12 +8,20 @@
 Context::Context()
 {
 	mParent = 0;
+	mNil = new Object();
+	mNil->setNone();
+	mVariables["nil"] = mNil;
+	mT = new Object();
+	mT->setT();
+	mVariables["t"] = mT;
 }
 
 Context::Context(Context *parent, std::map<std::string, Object*> &&variables)
 	: mParent(parent),
 	mVariables(std::move(variables))
 {
+	mNil = mParent->nil();
+	mT = mParent->t();
 }
 
 static void eatWhitespace(std::istream &i)
@@ -31,7 +39,7 @@ static void eatWhitespace(std::istream &i)
 
 Object *Context::read(std::istream &i)
 {
-	Object *object = 0;
+	Object *object = nil();
 
 	eatWhitespace(i);
 
@@ -46,7 +54,7 @@ Object *Context::read(std::istream &i)
 		Object *car = new Object();
 		car->setAtom("quote");
 		Object *cdr = new Object();
-		cdr->setCons(read(i), 0);
+		cdr->setCons(read(i), nil());
 		object->setCons(car, cdr);
 	}
 	else if (std::isdigit(c)) {
@@ -71,7 +79,7 @@ Object *Context::read(std::istream &i)
 	}
 	else if (c == '(')
 	{
-		Object *prev = 0;
+		Object *prev = nil();
 		while (true) {
 			eatWhitespace(i);
 			c = i.get();
@@ -81,12 +89,12 @@ Object *Context::read(std::istream &i)
 			i.unget();
 			Object *car = read(i);
 			Object *cons = new Object();
-			cons->setCons(car, 0);
-			if (prev) {
-				prev->setCons(prev->carValue(), cons);
+			cons->setCons(car, nil());
+			if (prev == nil()) {
+				object = cons;
 			}
 			else {
-				object = cons;
+				prev->setCons(prev->carValue(), cons);
 			}
 			prev = cons;
 		}
@@ -104,7 +112,10 @@ Object *Context::read(std::istream &i)
 		}
 
 		if (value == "nil") {
-			object = 0;
+			object = nil();
+		}
+		else if (value == "t") {
+			object = t();
 		}
 		else {
 			object = new Object();
@@ -117,12 +128,15 @@ Object *Context::read(std::istream &i)
 
 void Context::print(std::ostream &o, const Object *object)
 {
-	if (!object) {
-		o << "nil";
-		return;
-	}
-
 	switch (object->type()) {
+	case Object::TypeNone:
+		o << "nil";
+		break;
+
+	case Object::TypeT:
+		o << "t";
+		break;
+
 	case Object::TypeInt:
 		o << object->intValue();
 		break;
@@ -139,10 +153,10 @@ void Context::print(std::ostream &o, const Object *object)
 	{
 		const Object *cons = object;
 		o << "(";
-		while (cons) {
+		while (cons->type() != Object::TypeNone) {
 			print(o, cons->carValue());
 			cons = cons->cdrValue();
-			if (cons) {
+			if (cons->type() != Object::TypeNone) {
 				o << " ";
 			}
 		}
@@ -154,11 +168,8 @@ void Context::print(std::ostream &o, const Object *object)
 
 Object *Context::eval(Object *object)
 {
-	if (!object) {
-		return object;
-	}
-
 	switch (object->type()) {
+	case Object::TypeNone:
 	case Object::TypeInt:
 	case Object::TypeString:
 		return object;
@@ -174,11 +185,25 @@ Object *Context::eval(Object *object)
 	}
 }
 
+Object *Context::nil()
+{
+	return mNil;
+}
+
+Object *Context::t()
+{
+	return mT;
+}
+
 std::ostream &operator<<(std::ostream &o, Object::Type type)
 {
 	switch (type) {
 	case Object::TypeNone:
 		o << "nil";
+		break;
+
+	case Object::TypeT:
+		o << "t";
 		break;
 
 	case Object::TypeInt:
@@ -203,18 +228,9 @@ std::ostream &operator<<(std::ostream &o, Object::Type type)
 
 void Context::checkType(Object *object, Object::Type type)
 {
-	Object::Type objectType;
-
-	if (object) {
-		objectType = object->type();
-	}
-	else {
-		objectType = Object::TypeNone;
-	}
-
-	if (objectType != type) {
+	if (object->type() != type) {
 		std::stringstream ss;
-		ss << "Type mismatch on " << object << " (expected " << type << " got " << objectType << ")";
+		ss << "Type mismatch on " << object << " (expected " << type << " got " << object->type() << ")";
 		throw Error(ss.str());
 	}
 }
@@ -224,7 +240,7 @@ void Context::evalArgs(Object *object, int length, ...)
 	va_list ap;
 	va_start(ap, length);
 	int objectLength = 0;
-	for (Object *cons = object->cdrValue(); cons; cons = cons->cdrValue()) {
+	for (Object *cons = object->cdrValue(); cons != nil(); cons = cons->cdrValue()) {
 		if (objectLength < length) {
 			Object **arg = va_arg(ap, Object**);
 			*arg = eval(cons->carValue());
@@ -298,7 +314,7 @@ Object *Context::evalCons(Object *object)
 		Object *varsCons = cons->carValue();
 		checkType(varsCons, Object::TypeCons);
 		std::map<std::string, Object*> vars;
-		for (; varsCons; varsCons = varsCons->cdrValue()) {
+		for (; varsCons != nil(); varsCons = varsCons->cdrValue()) {
 			Object *varCons = varsCons->carValue();
 			checkType(varCons, Object::TypeCons);
 
@@ -308,15 +324,15 @@ Object *Context::evalCons(Object *object)
 		}
 		Context context(this, std::move(vars));
 		Object *ret = 0;
-		for (Object *item = cons->cdrValue(); item; item = item->cdrValue()) {
+		for (Object *item = cons->cdrValue(); item != nil(); item = item->cdrValue()) {
 			ret = context.eval(item->carValue());
 		}
 		return ret;
 	}
 	else if (name == "setq") {
 		Object *cons = object->cdrValue();
-		Object *ret = 0;
-		while (cons) {
+		Object *ret = nil();
+		while (cons != nil()) {
 			checkType(cons, Object::TypeCons);
 
 			Object *name = cons->carValue();
@@ -356,12 +372,12 @@ Object *Context::evalLambda(Object *function, Object *args)
 	Object *varCons = varsCons->carValue();
 	checkType(varCons, Object::TypeCons);
 	Object *argCons = args;
-	for (; varCons && argCons; varCons = varCons->cdrValue(), argCons = argCons->cdrValue()) {
+	for (; varCons != nil() && argCons != nil(); varCons = varCons->cdrValue(), argCons = argCons->cdrValue()) {
 		checkType(varCons->carValue(), Object::TypeAtom);
 		vars[varCons->carValue()->stringValue()] = eval(argCons->carValue());
 	}
 
-	if (varCons || argCons) {
+	if (varCons != nil() || argCons != nil()) {
 		std::stringstream ss;
 		ss << "Incorrect number of arguments to function " << function << ": " << args;
 		throw Error(ss.str());
@@ -369,7 +385,7 @@ Object *Context::evalLambda(Object *function, Object *args)
 
 	Context context(this, std::move(vars));
 	Object *ret = 0;
-	for (Object *cons = varsCons->cdrValue(); cons; cons = cons->cdrValue()) {
+	for (Object *cons = varsCons->cdrValue(); cons != nil(); cons = cons->cdrValue()) {
 		ret = context.eval(cons->carValue());
 	}
 

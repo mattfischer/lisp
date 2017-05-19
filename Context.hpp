@@ -16,6 +16,9 @@ public:
 	static void print(std::ostream &o, const Object *object);
 	Object *eval(Object *object);
 
+	Object *nil();
+	Object *t();
+
 private:
 	Object *evalAtom(Object *object);
 	Object *evalCons(Object *object);
@@ -28,6 +31,8 @@ private:
 
 	Context *mParent;
 	std::map<std::string, Object*> mVariables;
+	Object *mNil;
+	Object *mT;
 };
 
 std::ostream &operator<<(std::ostream &o, const Object *object);

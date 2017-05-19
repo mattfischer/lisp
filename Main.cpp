@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
 			std::cerr << "Error: " << error.message() << std::endl;
 			return 1;
 		}
-	} while (obj);
+	} while (obj != context.nil());
 
 	return 0;
 }
