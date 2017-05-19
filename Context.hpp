@@ -22,6 +22,8 @@ private:
 	void evalArgs(Object *object, int length, ...);
 	void checkType(Object *object, Object::Type type);
 
+	void setVariable(const std::string &name, Object *value);
+
 	Context *mParent;
 	std::map<std::string, Object*> mVariables;
 };

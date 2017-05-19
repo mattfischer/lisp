@@ -144,10 +144,26 @@ void Context::print(std::ostream &o, const Object *object)
 	}
 }
 
-std::ostream &operator<<(std::ostream &o, const Object *object)
+Object *Context::eval(Object *object)
 {
-	Context::print(o, object);
-	return o;
+	if (!object) {
+		return object;
+	}
+
+	switch (object->type()) {
+	case Object::TypeInt:
+	case Object::TypeString:
+		return object;
+
+	case Object::TypeAtom:
+		return evalAtom(object);
+
+	case Object::TypeCons:
+		return evalCons(object);
+
+	default:
+		return 0;
+	}
 }
 
 std::ostream &operator<<(std::ostream &o, Object::Type type)
@@ -303,30 +319,45 @@ Object *Context::evalCons(Object *object)
 		}
 		return ret;
 	}
+	else if (name == "setq") {
+		Object *cons = object->cdrValue();
+		checkType(cons, Object::TypeCons);
+		checkType(cons->cdrValue(), Object::TypeCons);
+
+		Object *name = cons->carValue();
+		checkType(name, Object::TypeAtom);
+
+		Object *value = eval(cons->cdrValue()->carValue());
+
+		setVariable(name->stringValue(), value);
+		return value;
+	}
 
 	std::stringstream ss;
 	ss << "No function " << car->stringValue() << " defined";
 	throw Error(ss.str());
 }
 
-Object *Context::eval(Object *object)
+void Context::setVariable(const std::string &name, Object *value)
 {
-	if (!object) {
-		return object;
+	std::map<std::string, Object*>::iterator it = mVariables.find(name);
+	if (it == mVariables.end()) {
+		if (mParent) {
+			mParent->setVariable(name, value);
+		}
+		else {
+			std::stringstream ss;
+			ss << "No symbol " << name << " defined";
+			throw Error(ss.str());
+		}
 	}
-
-	switch (object->type()) {
-	case Object::TypeInt:
-	case Object::TypeString:
-		return object;
-
-	case Object::TypeAtom:
-		return evalAtom(object);
-
-	case Object::TypeCons:
-		return evalCons(object);
-
-	default:
-		return 0;
+	else {
+		it->second = value;
 	}
+}
+
+std::ostream &operator<<(std::ostream &o, const Object *object)
+{
+	Context::print(o, object);
+	return o;
 }
