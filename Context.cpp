@@ -318,10 +318,14 @@ Object *Context::evalCons(Object *object)
 		setVariable(name->stringValue(), value);
 		return value;
 	}
-
-	std::stringstream ss;
-	ss << "No function " << car->stringValue() << " defined";
-	throw Error(ss.str());
+	else if (name == "quote") {
+		checkType(object->cdrValue(), Object::TypeCons);
+		return object->cdrValue()->carValue();
+	}
+	else {
+		Object *lambda = getVariable(name);
+		return evalLambda(lambda, object->cdrValue());
+	}
 }
 
 Object *Context::evalLambda(Object *function, Object *args)
