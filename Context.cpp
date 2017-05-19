@@ -1,11 +1,143 @@
-#include "Eval.hpp"
-#include "Print.hpp"
+#include "Context.hpp"
 #include "Error.hpp"
 
-#include <iostream>
-#include <cstring>
+#include <cctype>
 #include <cstdarg>
 #include <sstream>
+
+static void eatWhitespace(std::istream &i)
+{
+	while (!i.fail() && !i.eof())
+	{
+		char c = i.get();
+		if (!std::isspace(c))
+		{
+			i.unget();
+			break;
+		}
+	}
+}
+
+Object *Context::read(std::istream &i)
+{
+	Object *object = 0;
+
+	eatWhitespace(i);
+
+	if (i.fail() || i.eof()) {
+		return object;
+	}
+
+	char c = i.get();
+
+	if (std::isdigit(c)) {
+		int value;
+		i.unget();
+		i >> value;
+		object = new Object();
+		object->setInt(value);
+	}
+	else if (c == '\"')
+	{
+		std::string value;
+		while (!i.fail() && !i.eof()) {
+			c = i.get();
+			if (c == '\"') {
+				break;
+			}
+			value.push_back(c);
+		}
+		object = new Object();
+		object->setString(value.c_str());
+	}
+	else if (c == '(')
+	{
+		Object *prev = 0;
+		while (true) {
+			eatWhitespace(i);
+			c = i.get();
+			if (c == ')') {
+				break;
+			}
+			i.unget();
+			Object *car = read(i);
+			Object *cons = new Object();
+			cons->setCons(car, 0);
+			if (prev) {
+				prev->setCons(prev->carValue(), cons);
+			}
+			else {
+				object = cons;
+			}
+			prev = cons;
+		}
+	}
+	else {
+		std::string value;
+		i.unget();
+		while (!i.fail() && !i.eof()) {
+			c = i.get();
+			if (c == ')' || std::isspace(c)) {
+				i.unget();
+				break;
+			}
+			value.push_back(c);
+		}
+
+		if (value == "nil") {
+			object = 0;
+		}
+		else {
+			object = new Object();
+			object->setAtom(value.c_str());
+		}
+	}
+
+	return object;
+}
+
+void Context::print(std::ostream &o, const Object *object)
+{
+	if (!object) {
+		o << "nil";
+		return;
+	}
+
+	switch (object->type()) {
+	case Object::TypeInt:
+		o << object->intValue();
+		break;
+
+	case Object::TypeString:
+		o << "\"" << object->stringValue() << "\"";
+		break;
+
+	case Object::TypeAtom:
+		o << object->stringValue();
+		break;
+
+	case Object::TypeCons:
+	{
+		const Object *cons = object;
+		o << "(";
+		while (cons) {
+			print(o, cons->carValue());
+			cons = cons->cdrValue();
+			if (cons) {
+				o << " ";
+			}
+		}
+		o << ")";
+		break;
+	}
+	}
+}
+
+std::ostream &operator<<(std::ostream &o, const Object *object)
+{
+	Context::print(o, object);
+	return o;
+}
 
 std::ostream &operator<<(std::ostream &o, Object::Type type)
 {
@@ -34,13 +166,14 @@ std::ostream &operator<<(std::ostream &o, Object::Type type)
 	return o;
 }
 
-void checkType(Object *object, Object::Type type)
+void Context::checkType(Object *object, Object::Type type)
 {
 	Object::Type objectType;
 
 	if (object) {
 		objectType = object->type();
-	} else {
+	}
+	else {
 		objectType = Object::TypeNone;
 	}
 
@@ -51,7 +184,7 @@ void checkType(Object *object, Object::Type type)
 	}
 }
 
-void evalArgs(Object *object, int length, ...)
+void Context::evalArgs(Object *object, int length, ...)
 {
 	va_list ap;
 	va_start(ap, length);
@@ -71,7 +204,7 @@ void evalArgs(Object *object, int length, ...)
 	}
 }
 
-Object *evalFunction(Object *object)
+Object *Context::evalFunction(Object *object)
 {
 	Object *car = object->carValue();
 
@@ -123,7 +256,7 @@ Object *evalFunction(Object *object)
 	throw Error(ss.str());
 }
 
-Object *eval(Object *object)
+Object *Context::eval(Object *object)
 {
 	if (!object) {
 		return object;

@@ -97,19 +97,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Context.cpp" />
     <ClCompile Include="Error.cpp" />
-    <ClCompile Include="Eval.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Object.cpp" />
-    <ClCompile Include="Print.cpp" />
-    <ClCompile Include="Read.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Context.hpp" />
     <ClInclude Include="Error.hpp" />
-    <ClInclude Include="Eval.hpp" />
     <ClInclude Include="Object.hpp" />
-    <ClInclude Include="Print.hpp" />
-    <ClInclude Include="Read.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
