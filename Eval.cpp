@@ -1,9 +1,11 @@
 #include "Eval.hpp"
 #include "Print.hpp"
+#include "Error.hpp"
 
 #include <iostream>
 #include <cstring>
 #include <cstdarg>
+#include <sstream>
 
 std::ostream &operator<<(std::ostream &o, Object::Type type)
 {
@@ -32,7 +34,7 @@ std::ostream &operator<<(std::ostream &o, Object::Type type)
 	return o;
 }
 
-bool checkType(Object *object, Object::Type type)
+void checkType(Object *object, Object::Type type)
 {
 	Object::Type objectType;
 
@@ -43,53 +45,29 @@ bool checkType(Object *object, Object::Type type)
 	}
 
 	if (objectType != type) {
-		std::cerr << "Error: Type mismatch on " << object << " (expected " << type << " got " << objectType << ")" << std::endl;
-		return false;
+		std::stringstream ss;
+		ss << "Type mismatch on " << object << " (expected " << type << " got " << objectType << ")";
+		throw Error(ss.str());
 	}
-
-	return true;
-}
-
-bool checkArgs(Object *object, int length, ...)
-{
-	if (!checkType(object, Object::TypeCons)) {
-		return false;
-	}
-
-	Object *cons = object->cdrValue();
-	va_list ap;
-	va_start(ap, length);
-	for (int i = 0; i < length; i++) {
-		if (!cons) {
-			std::cerr << "Error: List " << object << " is of incorrect length (expected " << length << ")" << std::endl;
-			return false;
-		}
-
-		Object::Type type = va_arg(ap, Object::Type);
-		if (!checkType(cons->carValue(), type)) {
-			return false;
-		}
-		cons = cons->cdrValue();
-	}
-
-	if (cons) {
-		std::cerr << "Error: List " << object << " is of incorrect length (expected " << length << ")" << std::endl;
-		return false;
-	}
-
-	return true;
 }
 
 void evalArgs(Object *object, int length, ...)
 {
-	Object *cons = object->cdrValue();
-
 	va_list ap;
 	va_start(ap, length);
-	for (int i = 0; i < length; i++) {
-		Object **arg = va_arg(ap, Object**);
-		*arg = eval(cons->carValue());
-		cons = cons->cdrValue();
+	int objectLength = 0;
+	for (Object *cons = object->cdrValue(); cons; cons = cons->cdrValue()) {
+		if (objectLength < length) {
+			Object **arg = va_arg(ap, Object**);
+			*arg = eval(cons->carValue());
+		}
+		objectLength++;
+	}
+
+	if (objectLength != length) {
+		std::stringstream ss;
+		ss << "List " << object << " is of incorrect length (expected " << length + 1 << " got " << objectLength + 1 << ")";
+		throw Error(ss.str());
 	}
 }
 
@@ -97,61 +75,52 @@ Object *evalFunction(Object *object)
 {
 	Object *car = object->carValue();
 
-	if(!checkType(car, Object::TypeAtom)) {
-		return 0;
-	}
+	checkType(car, Object::TypeAtom);
 
 	if (!std::strcmp(car->stringValue(), "+")) {
-		if (!checkArgs(object, 2, Object::TypeInt, Object::TypeInt)) {
-			return 0;
-		}
-
 		Object *a, *b;
 		evalArgs(object, 2, &a, &b);
+		checkType(a, Object::TypeInt);
+		checkType(b, Object::TypeInt);
 
 		Object *ret = new Object();
 		ret->setInt(a->intValue() + b->intValue());
 		return ret;
 	}
 	else if (!std::strcmp(car->stringValue(), "-")) {
-		if (!checkArgs(object, 2, Object::TypeInt, Object::TypeInt)) {
-			return 0;
-		}
-
 		Object *a, *b;
 		evalArgs(object, 2, &a, &b);
+		checkType(a, Object::TypeInt);
+		checkType(b, Object::TypeInt);
 
 		Object *ret = new Object();
 		ret->setInt(a->intValue() - b->intValue());
 		return ret;
 	}
 	else if (!std::strcmp(car->stringValue(), "*")) {
-		if (!checkArgs(object, 2, Object::TypeInt, Object::TypeInt)) {
-			return 0;
-		}
-
 		Object *a, *b;
 		evalArgs(object, 2, &a, &b);
+		checkType(a, Object::TypeInt);
+		checkType(b, Object::TypeInt);
 
 		Object *ret = new Object();
 		ret->setInt(a->intValue() * b->intValue());
 		return ret;
 	}
 	else if (!std::strcmp(car->stringValue(), "/")) {
-		if (!checkArgs(object, 2, Object::TypeInt, Object::TypeInt)) {
-			return 0;
-		}
-
 		Object *a, *b;
 		evalArgs(object, 2, &a, &b);
+		checkType(a, Object::TypeInt);
+		checkType(b, Object::TypeInt);
 
 		Object *ret = new Object();
 		ret->setInt(a->intValue() / b->intValue());
 		return ret;
 	}
 
-	std::cerr << "Error: No function " << car->stringValue() << std::endl;
-	return 0;
+	std::stringstream ss;
+	ss << "No function " << car->stringValue();
+	throw Error(ss.str());
 }
 
 Object *eval(Object *object)
