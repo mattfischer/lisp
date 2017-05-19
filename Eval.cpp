@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <cstring>
+#include <cstdarg>
 
 std::ostream &operator<<(std::ostream &o, Object::Type type)
 {
@@ -49,38 +50,47 @@ bool checkType(Object *object, Object::Type type)
 	return true;
 }
 
-bool checkLength(Object *object, int length)
+bool checkArgs(Object *object, int length, ...)
 {
 	if (!checkType(object, Object::TypeCons)) {
 		return false;
 	}
 
-	Object *cons = object;
-	int objectLength = 0;
-	while (cons) {
-		objectLength++;
+	Object *cons = object->cdrValue();
+	va_list ap;
+	va_start(ap, length);
+	for (int i = 0; i < length; i++) {
+		if (!cons) {
+			std::cerr << "Error: List " << object << " is of incorrect length (expected " << length << ")" << std::endl;
+			return false;
+		}
+
+		Object::Type type = va_arg(ap, Object::Type);
+		if (!checkType(cons->carValue(), type)) {
+			return false;
+		}
 		cons = cons->cdrValue();
 	}
 
-	if (objectLength != length) {
-		std::cerr << "Error: List " << object << " is of incorrect length (expected " << length << " got " << objectLength << ")" << std::endl;
+	if (cons) {
+		std::cerr << "Error: List " << object << " is of incorrect length (expected " << length << ")" << std::endl;
 		return false;
 	}
 
 	return true;
 }
 
-Object *listItem(Object *object, int index)
+void evalArgs(Object *object, int length, ...)
 {
-	Object *cons = object;
-	for (int i = 0; i < index; i++) {
-		if (!cons) {
-			return 0;
-		}
+	Object *cons = object->cdrValue();
+
+	va_list ap;
+	va_start(ap, length);
+	for (int i = 0; i < length; i++) {
+		Object **arg = va_arg(ap, Object**);
+		*arg = eval(cons->carValue());
 		cons = cons->cdrValue();
 	}
-
-	return cons->carValue();
 }
 
 Object *evalFunction(Object *object)
@@ -92,60 +102,48 @@ Object *evalFunction(Object *object)
 	}
 
 	if (!std::strcmp(car->stringValue(), "+")) {
-		if (!checkLength(object, 3)) {
+		if (!checkArgs(object, 2, Object::TypeInt, Object::TypeInt)) {
 			return 0;
 		}
 
-		Object *a = eval(listItem(object, 1));
-		Object *b = eval(listItem(object, 2));
-		if (!checkType(a, Object::TypeInt) || !checkType(b, Object::TypeInt)) {
-			return 0;
-		}
+		Object *a, *b;
+		evalArgs(object, 2, &a, &b);
 
 		Object *ret = new Object();
 		ret->setInt(a->intValue() + b->intValue());
 		return ret;
 	}
 	else if (!std::strcmp(car->stringValue(), "-")) {
-		if (!checkLength(object, 3)) {
+		if (!checkArgs(object, 2, Object::TypeInt, Object::TypeInt)) {
 			return 0;
 		}
 
-		Object *a = eval(listItem(object, 1));
-		Object *b = eval(listItem(object, 2));
-		if (!checkType(a, Object::TypeInt) || !checkType(b, Object::TypeInt)) {
-			return 0;
-		}
+		Object *a, *b;
+		evalArgs(object, 2, &a, &b);
 
 		Object *ret = new Object();
 		ret->setInt(a->intValue() - b->intValue());
 		return ret;
 	}
 	else if (!std::strcmp(car->stringValue(), "*")) {
-		if (!checkLength(object, 3)) {
+		if (!checkArgs(object, 2, Object::TypeInt, Object::TypeInt)) {
 			return 0;
 		}
 
-		Object *a = eval(listItem(object, 1));
-		Object *b = eval(listItem(object, 2));
-		if (!checkType(a, Object::TypeInt) || !checkType(b, Object::TypeInt)) {
-			return 0;
-		}
+		Object *a, *b;
+		evalArgs(object, 2, &a, &b);
 
 		Object *ret = new Object();
 		ret->setInt(a->intValue() * b->intValue());
 		return ret;
 	}
 	else if (!std::strcmp(car->stringValue(), "/")) {
-		if (!checkLength(object, 3)) {
+		if (!checkArgs(object, 2, Object::TypeInt, Object::TypeInt)) {
 			return 0;
 		}
 
-		Object *a = eval(listItem(object, 1));
-		Object *b = eval(listItem(object, 2));
-		if (!checkType(a, Object::TypeInt) || !checkType(b, Object::TypeInt)) {
-			return 0;
-		}
+		Object *a, *b;
+		evalArgs(object, 2, &a, &b);
 
 		Object *ret = new Object();
 		ret->setInt(a->intValue() / b->intValue());
