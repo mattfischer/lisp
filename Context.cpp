@@ -156,7 +156,7 @@ Object *Context::eval(Object *object)
 		return object;
 
 	case Object::TypeAtom:
-		return evalAtom(object);
+		return getVariable(object->stringValue());
 
 	case Object::TypeCons:
 		return evalCons(object);
@@ -228,24 +228,6 @@ void Context::evalArgs(Object *object, int length, ...)
 		std::stringstream ss;
 		ss << "List " << object << " is of incorrect length (expected " << length + 1 << " got " << objectLength + 1 << ")";
 		throw Error(ss.str());
-	}
-}
-
-Object *Context::evalAtom(Object *object)
-{
-	std::map<std::string, Object*>::iterator it = mVariables.find(object->stringValue());
-	if (it == mVariables.end()) {
-		if (mParent) {
-			return mParent->eval(object);
-		}
-		else {
-			std::stringstream ss;
-			ss << "No symbol " << object->stringValue() << " defined";
-			throw Error(ss.str());
-		}
-	}
-	else {
-		return it->second;
 	}
 }
 
@@ -336,6 +318,24 @@ Object *Context::evalCons(Object *object)
 	std::stringstream ss;
 	ss << "No function " << car->stringValue() << " defined";
 	throw Error(ss.str());
+}
+
+Object *Context::getVariable(const std::string &name)
+{
+	std::map<std::string, Object*>::iterator it = mVariables.find(name);
+	if (it == mVariables.end()) {
+		if (mParent) {
+			return mParent->getVariable(name);
+		}
+		else {
+			std::stringstream ss;
+			ss << "No symbol " << name << " defined";
+			throw Error(ss.str());
+		}
+	}
+	else {
+		return it->second;
+	}
 }
 
 void Context::setVariable(const std::string &name, Object *value)
