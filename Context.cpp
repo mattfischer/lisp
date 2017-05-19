@@ -5,6 +5,17 @@
 #include <cstdarg>
 #include <sstream>
 
+Context::Context()
+{
+	mParent = 0;
+}
+
+Context::Context(Context *parent, std::map<std::string, Object*> &&variables)
+	: mParent(parent),
+	mVariables(std::move(variables))
+{
+}
+
 static void eatWhitespace(std::istream &i)
 {
 	while (!i.fail() && !i.eof())
@@ -204,13 +215,33 @@ void Context::evalArgs(Object *object, int length, ...)
 	}
 }
 
-Object *Context::evalFunction(Object *object)
+Object *Context::evalAtom(Object *object)
+{
+	std::map<std::string, Object*>::iterator it = mVariables.find(object->stringValue());
+	if (it == mVariables.end()) {
+		if (mParent) {
+			return mParent->eval(object);
+		}
+		else {
+			std::stringstream ss;
+			ss << "No symbol " << object->stringValue() << " defined";
+			throw Error(ss.str());
+		}
+	}
+	else {
+		return it->second;
+	}
+}
+
+Object *Context::evalCons(Object *object)
 {
 	Object *car = object->carValue();
 
 	checkType(car, Object::TypeAtom);
 
-	if (!std::strcmp(car->stringValue(), "+")) {
+	std::string name(car->stringValue());
+
+	if (name == "+") {
 		Object *a, *b;
 		evalArgs(object, 2, &a, &b);
 		checkType(a, Object::TypeInt);
@@ -220,7 +251,7 @@ Object *Context::evalFunction(Object *object)
 		ret->setInt(a->intValue() + b->intValue());
 		return ret;
 	}
-	else if (!std::strcmp(car->stringValue(), "-")) {
+	else if (name == "-") {
 		Object *a, *b;
 		evalArgs(object, 2, &a, &b);
 		checkType(a, Object::TypeInt);
@@ -230,7 +261,7 @@ Object *Context::evalFunction(Object *object)
 		ret->setInt(a->intValue() - b->intValue());
 		return ret;
 	}
-	else if (!std::strcmp(car->stringValue(), "*")) {
+	else if (name == "*") {
 		Object *a, *b;
 		evalArgs(object, 2, &a, &b);
 		checkType(a, Object::TypeInt);
@@ -240,7 +271,7 @@ Object *Context::evalFunction(Object *object)
 		ret->setInt(a->intValue() * b->intValue());
 		return ret;
 	}
-	else if (!std::strcmp(car->stringValue(), "/")) {
+	else if (name == "/") {
 		Object *a, *b;
 		evalArgs(object, 2, &a, &b);
 		checkType(a, Object::TypeInt);
@@ -250,9 +281,31 @@ Object *Context::evalFunction(Object *object)
 		ret->setInt(a->intValue() / b->intValue());
 		return ret;
 	}
+	else if (name == "let") {
+		Object *cons = object->cdrValue();
+		checkType(cons, Object::TypeCons);
+
+		Object *varsCons = cons->carValue();
+		checkType(varsCons, Object::TypeCons);
+		std::map<std::string, Object*> vars;
+		for (; varsCons; varsCons = varsCons->cdrValue()) {
+			Object *varCons = varsCons->carValue();
+			checkType(varCons, Object::TypeCons);
+
+			checkType(varCons->carValue(), Object::TypeAtom);
+			checkType(varCons->cdrValue(), Object::TypeCons);
+			vars[varCons->carValue()->stringValue()] = eval(varCons->cdrValue()->carValue());
+		}
+		Context context(this, std::move(vars));
+		Object *ret = 0;
+		for (Object *item = cons->cdrValue(); item; item = item->cdrValue()) {
+			ret = context.eval(item->carValue());
+		}
+		return ret;
+	}
 
 	std::stringstream ss;
-	ss << "No function " << car->stringValue();
+	ss << "No function " << car->stringValue() << " defined";
 	throw Error(ss.str());
 }
 
@@ -265,12 +318,15 @@ Object *Context::eval(Object *object)
 	switch (object->type()) {
 	case Object::TypeInt:
 	case Object::TypeString:
-	case Object::TypeAtom:
 		return object;
 
-	default:
-		break;
-	}
+	case Object::TypeAtom:
+		return evalAtom(object);
 
-	return evalFunction(object);
+	case Object::TypeCons:
+		return evalCons(object);
+
+	default:
+		return 0;
+	}
 }
