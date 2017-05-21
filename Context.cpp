@@ -1,7 +1,7 @@
 #include "Context.hpp"
 #include "Error.hpp"
+#include "IO.hpp"
 
-#include <cctype>
 #include <cstdarg>
 #include <sstream>
 
@@ -24,147 +24,6 @@ Context::Context(Context *parent, std::map<std::string, Object*> &&variables)
 	mT = mParent->t();
 }
 
-static void eatWhitespace(std::istream &i)
-{
-	while (!i.fail() && !i.eof())
-	{
-		char c = i.get();
-		if (!std::isspace(c))
-		{
-			i.unget();
-			break;
-		}
-	}
-}
-
-Object *Context::read(std::istream &i)
-{
-	Object *object = nil();
-
-	eatWhitespace(i);
-
-	if (i.fail() || i.eof()) {
-		return object;
-	}
-
-	char c = i.get();
-
-	if (c == '\'') {
-		object = new Object();
-		Object *car = new Object();
-		car->setAtom("quote");
-		Object *cdr = new Object();
-		cdr->setCons(read(i), nil());
-		object->setCons(car, cdr);
-	}
-	else if (std::isdigit(c)) {
-		int value;
-		i.unget();
-		i >> value;
-		object = new Object();
-		object->setInt(value);
-	}
-	else if (c == '\"')
-	{
-		std::string value;
-		while (!i.fail() && !i.eof()) {
-			c = i.get();
-			if (c == '\"') {
-				break;
-			}
-			value.push_back(c);
-		}
-		object = new Object();
-		object->setString(value.c_str());
-	}
-	else if (c == '(')
-	{
-		Object *prev = nil();
-		while (true) {
-			eatWhitespace(i);
-			c = i.get();
-			if (c == ')') {
-				break;
-			}
-			i.unget();
-			Object *car = read(i);
-			Object *cons = new Object();
-			cons->setCons(car, nil());
-			if (prev == nil()) {
-				object = cons;
-			}
-			else {
-				prev->setCons(prev->carValue(), cons);
-			}
-			prev = cons;
-		}
-	}
-	else {
-		std::string value;
-		i.unget();
-		while (!i.fail() && !i.eof()) {
-			c = i.get();
-			if (c == ')' || std::isspace(c)) {
-				i.unget();
-				break;
-			}
-			value.push_back(c);
-		}
-
-		if (value == "nil") {
-			object = nil();
-		}
-		else if (value == "t") {
-			object = t();
-		}
-		else {
-			object = new Object();
-			object->setAtom(value.c_str());
-		}
-	}
-
-	return object;
-}
-
-void Context::print(std::ostream &o, const Object *object)
-{
-	switch (object->type()) {
-	case Object::TypeNone:
-		o << "nil";
-		break;
-
-	case Object::TypeT:
-		o << "t";
-		break;
-
-	case Object::TypeInt:
-		o << object->intValue();
-		break;
-
-	case Object::TypeString:
-		o << "\"" << object->stringValue() << "\"";
-		break;
-
-	case Object::TypeAtom:
-		o << object->stringValue();
-		break;
-
-	case Object::TypeCons:
-	{
-		const Object *cons = object;
-		o << "(";
-		while (cons->type() != Object::TypeNone) {
-			print(o, cons->carValue());
-			cons = cons->cdrValue();
-			if (cons->type() != Object::TypeNone) {
-				o << " ";
-			}
-		}
-		o << ")";
-		break;
-	}
-	}
-}
 
 Object *Context::eval(Object *object)
 {
@@ -426,10 +285,4 @@ void Context::setVariable(const std::string &name, Object *value)
 	else {
 		it->second = value;
 	}
-}
-
-std::ostream &operator<<(std::ostream &o, const Object *object)
-{
-	Context::print(o, object);
-	return o;
 }

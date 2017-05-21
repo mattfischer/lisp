@@ -19,6 +19,9 @@
     <ClCompile Include="Context.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="IO.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Object.hpp">
@@ -28,6 +31,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Context.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IO.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

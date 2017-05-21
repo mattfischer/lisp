@@ -1,6 +1,7 @@
 #include "Context.hpp"
 #include "Object.hpp"
 #include "Error.hpp"
+#include "IO.hpp"
 
 #include <iostream>
 
@@ -11,7 +12,7 @@ int main(int argc, char *argv[])
 
 	do {
 		try {
-			obj = context.read(std::cin);
+			obj = IO::read(std::cin, &context);
 			obj = context.eval(obj);
 			std::cout << obj << std::endl;
 		}

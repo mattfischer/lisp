@@ -3,8 +3,6 @@
 
 #include "Object.hpp"
 
-#include <istream>
-#include <ostream>
 #include <map>
 
 class Context {
@@ -12,8 +10,6 @@ public:
 	Context();
 	Context(Context *parent, std::map<std::string, Object*> &&variables);
 
-	Object *read(std::istream &i);
-	static void print(std::ostream &o, const Object *object);
 	Object *eval(Object *object);
 
 	Object *nil();
@@ -34,7 +30,5 @@ private:
 	Object *mNil;
 	Object *mT;
 };
-
-std::ostream &operator<<(std::ostream &o, const Object *object);
 
 #endif
