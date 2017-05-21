@@ -329,7 +329,7 @@ Object *Context::evalCons(Object *object)
 		}
 		return ret;
 	}
-	else if (name == "setq") {
+	else if (name == "set!") {
 		Object *cons = object->cdrValue();
 		Object *ret = nil();
 		while (cons != nil()) {
