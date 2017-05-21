@@ -3,11 +3,11 @@
 
 #include "Object.hpp"
 
+#include <map>
+#include <string>
+
 class NativeFunctions {
 public:
-	static Object *add(Object *args);
-	static Object *subtract(Object *args);
-	static Object *multiply(Object *args);
-	static Object *divide(Object *args);
+	static std::map<std::string, Object*> functions();
 };
 #endif

@@ -22,21 +22,8 @@ Context::Context()
 	variables["t"] = object;
 	mT = object;
 	
-	object = new Object();
-	object->setNativeFunction(NativeFunctions::add);
-	variables["+"] = object;
-
-	object = new Object();
-	object->setNativeFunction(NativeFunctions::subtract);
-	variables["-"] = object;
-
-	object = new Object();
-	object->setNativeFunction(NativeFunctions::multiply);
-	variables["*"] = object;
-
-	object = new Object();
-	object->setNativeFunction(NativeFunctions::divide);
-	variables["/"] = object;
+	std::map<std::string, Object*> functions = NativeFunctions::functions();
+	variables.insert(functions.begin(), functions.end());
 
 	mRootScope = new Scope(0, std::move(variables));
 }
@@ -86,7 +73,7 @@ void Context::checkType(Object *object, Object::Type type)
 
 Object *Context::evalSpecialForm(Object *object, Scope *scope, bool &handled)
 {
-	const std::string &name = object->stringValue();
+	const std::string &name = car(object)->stringValue();
 	handled = true;
 
 	if (name == "set!") {
