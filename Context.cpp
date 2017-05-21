@@ -132,13 +132,28 @@ Object *Context::evalCons(Object *object, Scope *scope)
 		}
 	}
 
-	function = eval(function, scope);
+	Object *evalArgs = nil();
+	Object *prev = nil();
+	for (Object *cons = object; cons != nil(); cons = cdr(cons)) {
+		Object *evalArg = eval(car(cons), scope);
+		Object *evalCons = new Object();
+		evalCons->setCons(evalArg, nil());
+		if (prev == nil()) {
+			evalArgs = evalCons;
+		}
+		else {
+			prev->setCons(car(prev), evalCons);
+		}
+		prev = evalCons;
+	}
+
+	function = car(evalArgs);
 	if (function->type() == Object::TypeLambda) {
 		std::map<std::string, Object*> vars;
-		Object *argCons = args;
+		Object *argCons = cdr(evalArgs);
 		for (int i = 0; i < function->lambdaValue().variables.size(); i++) {
 			checkType(argCons, Object::Type::TypeCons);
-			vars[function->lambdaValue().variables[i]] = eval(car(argCons));
+			vars[function->lambdaValue().variables[i]] = car(argCons);
 			argCons = cdr(argCons);
 		}
 
@@ -157,7 +172,7 @@ Object *Context::evalCons(Object *object, Scope *scope)
 	}
 	else if (function->type() == Object::TypeNativeFunction)
 	{
-		return function->nativeFunctionValue()(args);
+		return function->nativeFunctionValue()(cdr(evalArgs));
 	}
 	else {
 		std::stringstream ss;
