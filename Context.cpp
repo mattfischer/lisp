@@ -7,41 +7,21 @@
 
 Context::Context()
 {
-	mParent = 0;
+	std::map<std::string, Object*> variables;
+
 	mNil = new Object();
 	mNil->setNone();
-	mVariables["nil"] = mNil;
+	variables["nil"] = mNil;
 	mT = new Object();
 	mT->setT();
-	mVariables["t"] = mT;
-}
+	variables["t"] = mT;
 
-Context::Context(Context *parent, std::map<std::string, Object*> &&variables)
-	: mParent(parent),
-	mVariables(std::move(variables))
-{
-	mNil = mParent->nil();
-	mT = mParent->t();
+	mRootScope = new Scope(0, std::move(variables));
 }
-
 
 Object *Context::eval(Object *object)
 {
-	switch (object->type()) {
-	case Object::TypeNone:
-	case Object::TypeInt:
-	case Object::TypeString:
-		return object;
-
-	case Object::TypeAtom:
-		return getVariable(object->stringValue());
-
-	case Object::TypeCons:
-		return evalCons(object);
-
-	default:
-		return 0;
-	}
+	return eval(object, mRootScope);
 }
 
 Object *Context::nil()
@@ -52,6 +32,25 @@ Object *Context::nil()
 Object *Context::t()
 {
 	return mT;
+}
+
+Object *Context::eval(Object *object, Scope *scope)
+{
+	switch (object->type()) {
+	case Object::TypeNone:
+	case Object::TypeInt:
+	case Object::TypeString:
+		return object;
+
+	case Object::TypeAtom:
+		return scope->get(object->stringValue());
+
+	case Object::TypeCons:
+		return evalCons(object, scope);
+
+	default:
+		return 0;
+	}
 }
 
 std::ostream &operator<<(std::ostream &o, Object::Type type)
@@ -94,7 +93,7 @@ void Context::checkType(Object *object, Object::Type type)
 	}
 }
 
-void Context::evalArgs(Object *object, int length, ...)
+void Context::evalArgs(Object *object, Scope *scope, int length, ...)
 {
 	va_list ap;
 	va_start(ap, length);
@@ -102,7 +101,7 @@ void Context::evalArgs(Object *object, int length, ...)
 	for (Object *cons = object->cdrValue(); cons != nil(); cons = cons->cdrValue()) {
 		if (objectLength < length) {
 			Object **arg = va_arg(ap, Object**);
-			*arg = eval(cons->carValue());
+			*arg = eval(cons->carValue(), scope);
 		}
 		objectLength++;
 	}
@@ -114,12 +113,12 @@ void Context::evalArgs(Object *object, int length, ...)
 	}
 }
 
-Object *Context::evalCons(Object *object)
+Object *Context::evalCons(Object *object, Scope *scope)
 {
 	Object *car = object->carValue();
 
 	if (car->type() == Object::TypeCons) {
-		return evalLambda(car, object->cdrValue());
+		return evalLambda(car, object->cdrValue(), scope);
 	}
 
 	checkType(car, Object::TypeAtom);
@@ -128,7 +127,7 @@ Object *Context::evalCons(Object *object)
 
 	if (name == "+") {
 		Object *a, *b;
-		evalArgs(object, 2, &a, &b);
+		evalArgs(object, scope, 2, &a, &b);
 		checkType(a, Object::TypeInt);
 		checkType(b, Object::TypeInt);
 
@@ -138,7 +137,7 @@ Object *Context::evalCons(Object *object)
 	}
 	else if (name == "-") {
 		Object *a, *b;
-		evalArgs(object, 2, &a, &b);
+		evalArgs(object, scope, 2, &a, &b);
 		checkType(a, Object::TypeInt);
 		checkType(b, Object::TypeInt);
 
@@ -148,7 +147,7 @@ Object *Context::evalCons(Object *object)
 	}
 	else if (name == "*") {
 		Object *a, *b;
-		evalArgs(object, 2, &a, &b);
+		evalArgs(object, scope, 2, &a, &b);
 		checkType(a, Object::TypeInt);
 		checkType(b, Object::TypeInt);
 
@@ -158,7 +157,7 @@ Object *Context::evalCons(Object *object)
 	}
 	else if (name == "/") {
 		Object *a, *b;
-		evalArgs(object, 2, &a, &b);
+		evalArgs(object, scope, 2, &a, &b);
 		checkType(a, Object::TypeInt);
 		checkType(b, Object::TypeInt);
 
@@ -181,10 +180,10 @@ Object *Context::evalCons(Object *object)
 			checkType(varCons->cdrValue(), Object::TypeCons);
 			vars[varCons->carValue()->stringValue()] = eval(varCons->cdrValue()->carValue());
 		}
-		Context context(this, std::move(vars));
+		Scope *newScope = new Scope(scope, std::move(vars));
 		Object *ret = 0;
 		for (Object *item = cons->cdrValue(); item != nil(); item = item->cdrValue()) {
-			ret = context.eval(item->carValue());
+			ret = eval(item->carValue(), newScope);
 		}
 		return ret;
 	}
@@ -201,7 +200,7 @@ Object *Context::evalCons(Object *object)
 			checkType(cons, Object::TypeCons);
 			ret = eval(cons->carValue());
 
-			setVariable(name->stringValue(), ret);
+			scope->set(name->stringValue(), ret);
 
 			cons = cons->cdrValue();
 		}
@@ -212,12 +211,12 @@ Object *Context::evalCons(Object *object)
 		return object->cdrValue()->carValue();
 	}
 	else {
-		Object *lambda = getVariable(name);
-		return evalLambda(lambda, object->cdrValue());
+		Object *lambda = scope->get(name);
+		return evalLambda(lambda, object->cdrValue(), scope);
 	}
 }
 
-Object *Context::evalLambda(Object *function, Object *args)
+Object *Context::evalLambda(Object *function, Object *args, Scope *scope)
 {
 	checkType(function->carValue(), Object::Type::TypeAtom);
 	if (std::string(function->carValue()->stringValue()) != "lambda") {
@@ -242,47 +241,11 @@ Object *Context::evalLambda(Object *function, Object *args)
 		throw Error(ss.str());
 	}
 
-	Context context(this, std::move(vars));
+	Scope *newScope = new Scope(scope, std::move(vars));
 	Object *ret = 0;
 	for (Object *cons = varsCons->cdrValue(); cons != nil(); cons = cons->cdrValue()) {
-		ret = context.eval(cons->carValue());
+		ret = eval(cons->carValue(), newScope);
 	}
 
 	return ret;
-}
-
-Object *Context::getVariable(const std::string &name)
-{
-	std::map<std::string, Object*>::iterator it = mVariables.find(name);
-	if (it == mVariables.end()) {
-		if (mParent) {
-			return mParent->getVariable(name);
-		}
-		else {
-			std::stringstream ss;
-			ss << "No symbol " << name << " defined";
-			throw Error(ss.str());
-		}
-	}
-	else {
-		return it->second;
-	}
-}
-
-void Context::setVariable(const std::string &name, Object *value)
-{
-	std::map<std::string, Object*>::iterator it = mVariables.find(name);
-	if (it == mVariables.end()) {
-		if (mParent) {
-			mParent->setVariable(name, value);
-		}
-		else {
-			std::stringstream ss;
-			ss << "No symbol " << name << " defined";
-			throw Error(ss.str());
-		}
-	}
-	else {
-		it->second = value;
-	}
 }

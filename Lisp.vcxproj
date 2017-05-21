@@ -102,12 +102,14 @@
     <ClCompile Include="IO.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Object.cpp" />
+    <ClCompile Include="Scope.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Context.hpp" />
     <ClInclude Include="Error.hpp" />
     <ClInclude Include="IO.hpp" />
     <ClInclude Include="Object.hpp" />
+    <ClInclude Include="Scope.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
