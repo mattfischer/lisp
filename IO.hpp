@@ -14,5 +14,6 @@ public:
 };
 
 std::ostream &operator<<(std::ostream &o, const Object *object);
+std::ostream &operator<<(std::ostream &o, Object::Type type);
 
 #endif

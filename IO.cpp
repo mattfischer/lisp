@@ -149,3 +149,34 @@ std::ostream &operator<<(std::ostream &o, const Object *object)
 	IO::print(o, object);
 	return o;
 }
+
+std::ostream &operator<<(std::ostream &o, Object::Type type)
+{
+	switch (type) {
+	case Object::TypeNone:
+		o << "nil";
+		break;
+
+	case Object::TypeT:
+		o << "t";
+		break;
+
+	case Object::TypeInt:
+		o << "int";
+		break;
+
+	case Object::TypeString:
+		o << "string";
+		break;
+
+	case Object::TypeAtom:
+		o << "atom";
+		break;
+
+	case Object::TypeCons:
+		o << "cons";
+		break;
+	}
+
+	return o;
+}

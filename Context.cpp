@@ -53,37 +53,6 @@ Object *Context::eval(Object *object, Scope *scope)
 	}
 }
 
-std::ostream &operator<<(std::ostream &o, Object::Type type)
-{
-	switch (type) {
-	case Object::TypeNone:
-		o << "nil";
-		break;
-
-	case Object::TypeT:
-		o << "t";
-		break;
-
-	case Object::TypeInt:
-		o << "int";
-		break;
-
-	case Object::TypeString:
-		o << "string";
-		break;
-
-	case Object::TypeAtom:
-		o << "atom";
-		break;
-
-	case Object::TypeCons:
-		o << "cons";
-		break;
-	}
-
-	return o;
-}
-
 void Context::checkType(Object *object, Object::Type type)
 {
 	if (object->type() != type) {
