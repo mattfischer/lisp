@@ -42,6 +42,14 @@ void Object::setCons(Object *car, Object *cdr)
 	mData.consValue.cdr = cdr;
 }
 
+void Object::setLambda(int numVariables, char **variables, Object *body)
+{
+	mType = TypeLambda;
+	mData.lambdaValue.numVariables = numVariables;
+	mData.lambdaValue.variables = variables;
+	mData.lambdaValue.body = body;
+}
+
 int Object::intValue() const
 {
 	return mData.intValue;
@@ -62,12 +70,34 @@ Object *Object::cdrValue() const
 	return mData.consValue.cdr;
 }
 
+int Object::numVariables() const
+{
+	return mData.lambdaValue.numVariables;
+}
+
+char **Object::variables() const
+{
+	return mData.lambdaValue.variables;
+}
+
+Object *Object::lambdaBody() const
+{
+	return mData.lambdaValue.body;
+}
+
 void Object::dispose()
 {
 	switch (mType) {
 	case TypeString:
 	case TypeAtom:
 		free(mData.stringValue);
+		break;
+
+	case TypeLambda:
+		for (int i = 0; i < mData.lambdaValue.numVariables; i++) {
+			free(mData.lambdaValue.variables[i]);
+		}
+		free(mData.lambdaValue.variables);
 		break;
 
 	default:
