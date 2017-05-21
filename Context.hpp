@@ -19,6 +19,9 @@ private:
 	void evalArgs(Object *object, Scope *scope, int length, ...);
 	void checkType(Object *object, Object::Type type);
 
+	Object *car(Object *object);
+	Object *cdr(Object *object);
+
 	Object *mNil;
 	Object *mT;
 	Scope *mRootScope;

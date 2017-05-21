@@ -67,10 +67,10 @@ void Context::evalArgs(Object *object, Scope *scope, int length, ...)
 	va_list ap;
 	va_start(ap, length);
 	int objectLength = 0;
-	for (Object *cons = object->cdrValue(); cons != nil(); cons = cons->cdrValue()) {
+	for (Object *cons = cdr(object); cons != nil(); cons = cdr(cons)) {
 		if (objectLength < length) {
 			Object **arg = va_arg(ap, Object**);
-			*arg = eval(cons->carValue(), scope);
+			*arg = eval(car(cons), scope);
 		}
 		objectLength++;
 	}
@@ -84,11 +84,10 @@ void Context::evalArgs(Object *object, Scope *scope, int length, ...)
 
 Object *Context::evalCons(Object *object, Scope *scope)
 {
-	Object *car = object->carValue();
+	Object *head = car(object);
 
-	if (car->type() == Object::TypeAtom) {
-
-		std::string name(car->stringValue());
+	if (head->type() == Object::TypeAtom) {
+		std::string name(head->stringValue());
 
 		if (name == "+") {
 			Object *a, *b;
@@ -131,59 +130,59 @@ Object *Context::evalCons(Object *object, Scope *scope)
 			return ret;
 		}
 		else if (name == "set!") {
-			Object *cons = object->cdrValue();
+			Object *cons = cdr(object);
 			Object *ret = nil();
 			while (cons != nil()) {
 				checkType(cons, Object::TypeCons);
 
-				Object *name = cons->carValue();
+				Object *name = car(cons);
 				checkType(name, Object::TypeAtom);
 
-				cons = cons->cdrValue();
+				cons = cdr(cons);
 				checkType(cons, Object::TypeCons);
-				ret = eval(cons->carValue());
+				ret = eval(car(cons));
 
 				scope->set(name->stringValue(), ret);
 
-				cons = cons->cdrValue();
+				cons = cdr(cons);
 			}
 			return ret;
 		}
 		else if (name == "quote") {
-			checkType(object->cdrValue(), Object::TypeCons);
-			return object->cdrValue()->carValue();
+			checkType(cdr(object), Object::TypeCons);
+			return car(cdr(object));
 		}
 		else if (name == "lambda") {
-			Object *varsCons = object->cdrValue();
+			Object *varsCons = cdr(object);
 			checkType(varsCons, Object::TypeCons);
 
 			std::vector<std::string> varVector;
-			Object *varCons = varsCons->carValue();
+			Object *varCons = car(varsCons);
 			checkType(varCons, Object::TypeCons);
-			for (; varCons != nil(); varCons = varCons->cdrValue()) {
-				checkType(varCons->carValue(), Object::TypeAtom);
-				varVector.push_back(varCons->carValue()->stringValue());
+			for (; varCons != nil(); varCons = cdr(varCons)) {
+				checkType(car(varCons), Object::TypeAtom);
+				varVector.push_back(car(varCons)->stringValue());
 			}
 			char **vars = new char*[varVector.size()];
 			for (int i = 0; i < varVector.size(); i++) {
 				vars[i] = strdup(varVector[i].c_str());
 			}
 			Object *ret = new Object;
-			ret->setLambda(varVector.size(), vars, varsCons->cdrValue());
+			ret->setLambda(varVector.size(), vars, cdr(varsCons));
 			return ret;
 		}
 	}
 
-	Object *lambda = eval(car, scope);
-	Object *args = object->cdrValue();
+	Object *lambda = eval(head, scope);
+	Object *args = cdr(object);
 	checkType(lambda, Object::Type::TypeLambda);
 
 	std::map<std::string, Object*> vars;
 	Object *argCons = args;
-	for(int i=0; i<lambda->numVariables(); i++) {
+	for(int i=0; i<lambda->lambdaValue().numVariables; i++) {
 		checkType(argCons, Object::Type::TypeCons);
-		vars[lambda->variables()[i]] = eval(argCons->carValue());
-		argCons = argCons->cdrValue();
+		vars[lambda->lambdaValue().variables[i]] = eval(car(argCons));
+		argCons = cdr(argCons);
 	}
 
 	if (argCons != nil()) {
@@ -194,9 +193,19 @@ Object *Context::evalCons(Object *object, Scope *scope)
 
 	Scope *newScope = new Scope(scope, std::move(vars));
 	Object *ret = 0;
-	for (Object *cons = lambda->lambdaBody(); cons != nil(); cons = cons->cdrValue()) {
-		ret = eval(cons->carValue(), newScope);
+	for (Object *cons = lambda->lambdaValue().body; cons != nil(); cons = cdr(cons)) {
+		ret = eval(car(cons), newScope);
 	}
 
 	return ret;
+}
+
+Object *Context::car(Object *object)
+{
+	return object->consValue().car;
+}
+
+Object *Context::cdr(Object *object)
+{
+	return object->consValue().cdr;
 }

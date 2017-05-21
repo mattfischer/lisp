@@ -16,6 +16,17 @@ public:
 		TypeLambda
 	};
 
+	struct Cons {
+		Object *car;
+		Object *cdr;
+	};
+
+	struct Lambda {
+		int numVariables;
+		char **variables;
+		Object *body;
+	};
+
 	Type type() const;
 
 	void setNone();
@@ -28,11 +39,8 @@ public:
 
 	int intValue() const;
 	const char *stringValue() const;
-	Object *carValue() const;
-	Object *cdrValue() const;
-	int numVariables() const;
-	char **variables() const;
-	Object *lambdaBody() const;
+	const Cons &consValue() const;
+	const Lambda &lambdaValue() const;
 
 	void dispose();
 
@@ -42,8 +50,8 @@ private:
 	union {
 		int intValue;
 		char *stringValue;
-		struct { Object *car; Object *cdr; } consValue;
-		struct { int numVariables; char **variables; Object *body; } lambdaValue;
+		Cons consValue;
+		Lambda lambdaValue;
 	} mData;
 };
 

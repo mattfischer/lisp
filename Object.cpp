@@ -60,29 +60,14 @@ const char *Object::stringValue() const
 	return mData.stringValue;
 }
 
-Object *Object::carValue() const
+const Object::Cons &Object::consValue() const
 {
-	return mData.consValue.car;
+	return mData.consValue;
 }
 
-Object *Object::cdrValue() const
+const Object::Lambda &Object::lambdaValue() const
 {
-	return mData.consValue.cdr;
-}
-
-int Object::numVariables() const
-{
-	return mData.lambdaValue.numVariables;
-}
-
-char **Object::variables() const
-{
-	return mData.lambdaValue.variables;
-}
-
-Object *Object::lambdaBody() const
-{
-	return mData.lambdaValue.body;
+	return mData.lambdaValue;
 }
 
 void Object::dispose()

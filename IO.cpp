@@ -72,7 +72,7 @@ Object *IO::read(std::istream &i, Context *context)
 				object = cons;
 			}
 			else {
-				prev->setCons(prev->carValue(), cons);
+				prev->setCons(prev->consValue().car, cons);
 			}
 			prev = cons;
 		}
@@ -132,8 +132,8 @@ void IO::print(std::ostream &o, const Object *object)
 		const Object *cons = object;
 		o << "(";
 		while (cons->type() != Object::TypeNone) {
-			print(o, cons->carValue());
-			cons = cons->cdrValue();
+			print(o, cons->consValue().car);
+			cons = cons->consValue().cdr;
 			if (cons->type() != Object::TypeNone) {
 				o << " ";
 			}
