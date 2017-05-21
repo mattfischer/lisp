@@ -1,6 +1,7 @@
 #include "NativeFunctions.hpp"
 
 #include "Error.hpp"
+#include "IO.hpp"
 
 #include <sstream>
 #include <cstdarg>
