@@ -130,28 +130,6 @@ Object *Context::evalCons(Object *object, Scope *scope)
 			ret->setInt(a->intValue() / b->intValue());
 			return ret;
 		}
-		else if (name == "let") {
-			Object *cons = object->cdrValue();
-			checkType(cons, Object::TypeCons);
-
-			Object *varsCons = cons->carValue();
-			checkType(varsCons, Object::TypeCons);
-			std::map<std::string, Object*> vars;
-			for (; varsCons != nil(); varsCons = varsCons->cdrValue()) {
-				Object *varCons = varsCons->carValue();
-				checkType(varCons, Object::TypeCons);
-
-				checkType(varCons->carValue(), Object::TypeAtom);
-				checkType(varCons->cdrValue(), Object::TypeCons);
-				vars[varCons->carValue()->stringValue()] = eval(varCons->cdrValue()->carValue());
-			}
-			Scope *newScope = new Scope(scope, std::move(vars));
-			Object *ret = 0;
-			for (Object *item = cons->cdrValue(); item != nil(); item = item->cdrValue()) {
-				ret = eval(item->carValue(), newScope);
-			}
-			return ret;
-		}
 		else if (name == "set!") {
 			Object *cons = object->cdrValue();
 			Object *ret = nil();
