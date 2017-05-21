@@ -25,6 +25,9 @@
     <ClCompile Include="Scope.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="NativeFunctions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Object.hpp">
@@ -40,6 +43,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Scope.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NativeFunctions.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

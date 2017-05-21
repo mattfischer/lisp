@@ -16,7 +16,8 @@ public:
 private:
 	Object *eval(Object *object, Scope *scope);
 	Object *evalCons(Object *object, Scope *scope);
-	void evalArgs(Object *object, Scope *scope, int length, ...);
+	Object *evalSpecialForm(Object *object, Scope *scope, bool &handled);
+
 	void checkType(Object *object, Object::Type type);
 
 	Object *car(Object *object);

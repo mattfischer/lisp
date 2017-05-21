@@ -1,6 +1,7 @@
 #include "Context.hpp"
 #include "Error.hpp"
 #include "IO.hpp"
+#include "NativeFunctions.hpp"
 
 #include <cstdarg>
 #include <sstream>
@@ -9,12 +10,33 @@ Context::Context()
 {
 	std::map<std::string, Object*> variables;
 
-	mNil = new Object();
-	mNil->setNone();
-	variables["nil"] = mNil;
-	mT = new Object();
-	mT->setT();
-	variables["t"] = mT;
+	Object *object;
+
+	object = new Object();
+	object->setNone();
+	variables["nil"] = object;
+	mNil = object;
+
+	object = new Object();
+	object->setT();
+	variables["t"] = object;
+	mT = object;
+	
+	object = new Object();
+	object->setNativeFunction(NativeFunctions::add);
+	variables["+"] = object;
+
+	object = new Object();
+	object->setNativeFunction(NativeFunctions::subtract);
+	variables["-"] = object;
+
+	object = new Object();
+	object->setNativeFunction(NativeFunctions::multiply);
+	variables["*"] = object;
+
+	object = new Object();
+	object->setNativeFunction(NativeFunctions::divide);
+	variables["/"] = object;
 
 	mRootScope = new Scope(0, std::move(variables));
 }
@@ -62,138 +84,101 @@ void Context::checkType(Object *object, Object::Type type)
 	}
 }
 
-void Context::evalArgs(Object *object, Scope *scope, int length, ...)
+Object *Context::evalSpecialForm(Object *object, Scope *scope, bool &handled)
 {
-	va_list ap;
-	va_start(ap, length);
-	int objectLength = 0;
-	for (Object *cons = cdr(object); cons != nil(); cons = cdr(cons)) {
-		if (objectLength < length) {
-			Object **arg = va_arg(ap, Object**);
-			*arg = eval(car(cons), scope);
+	const std::string &name = object->stringValue();
+	handled = true;
+
+	if (name == "set!") {
+		Object *cons = cdr(object);
+		Object *ret = nil();
+		while (cons != nil()) {
+			checkType(cons, Object::TypeCons);
+
+			Object *name = car(cons);
+			checkType(name, Object::TypeAtom);
+
+			cons = cdr(cons);
+			checkType(cons, Object::TypeCons);
+			ret = eval(car(cons));
+
+			scope->set(name->stringValue(), ret);
+
+			cons = cdr(cons);
 		}
-		objectLength++;
+		return ret;
+	}
+	else if (name == "quote") {
+		checkType(cdr(object), Object::TypeCons);
+		return car(cdr(object));
+	}
+	else if (name == "lambda") {
+		Object *varsCons = cdr(object);
+		checkType(varsCons, Object::TypeCons);
+
+		std::vector<std::string> variables;
+		Object *varCons = car(varsCons);
+		checkType(varCons, Object::TypeCons);
+		for (; varCons != nil(); varCons = cdr(varCons)) {
+			checkType(car(varCons), Object::TypeAtom);
+			variables.push_back(car(varCons)->stringValue());
+		}
+		Object *ret = new Object;
+		ret->setLambda(std::move(variables), cdr(varsCons));
+		return ret;
 	}
 
-	if (objectLength != length) {
-		std::stringstream ss;
-		ss << "List " << object << " is of incorrect length (expected " << length + 1 << " got " << objectLength + 1 << ")";
-		throw Error(ss.str());
-	}
+	handled = false;
+	return 0;
 }
 
 Object *Context::evalCons(Object *object, Scope *scope)
 {
-	Object *head = car(object);
-
-	if (head->type() == Object::TypeAtom) {
-		const std::string &name = head->stringValue();
-
-		if (name == "+") {
-			Object *a, *b;
-			evalArgs(object, scope, 2, &a, &b);
-			checkType(a, Object::TypeInt);
-			checkType(b, Object::TypeInt);
-
-			Object *ret = new Object();
-			ret->setInt(a->intValue() + b->intValue());
-			return ret;
-		}
-		else if (name == "-") {
-			Object *a, *b;
-			evalArgs(object, scope, 2, &a, &b);
-			checkType(a, Object::TypeInt);
-			checkType(b, Object::TypeInt);
-
-			Object *ret = new Object();
-			ret->setInt(a->intValue() - b->intValue());
-			return ret;
-		}
-		else if (name == "*") {
-			Object *a, *b;
-			evalArgs(object, scope, 2, &a, &b);
-			checkType(a, Object::TypeInt);
-			checkType(b, Object::TypeInt);
-
-			Object *ret = new Object();
-			ret->setInt(a->intValue() * b->intValue());
-			return ret;
-		}
-		else if (name == "/") {
-			Object *a, *b;
-			evalArgs(object, scope, 2, &a, &b);
-			checkType(a, Object::TypeInt);
-			checkType(b, Object::TypeInt);
-
-			Object *ret = new Object();
-			ret->setInt(a->intValue() / b->intValue());
-			return ret;
-		}
-		else if (name == "set!") {
-			Object *cons = cdr(object);
-			Object *ret = nil();
-			while (cons != nil()) {
-				checkType(cons, Object::TypeCons);
-
-				Object *name = car(cons);
-				checkType(name, Object::TypeAtom);
-
-				cons = cdr(cons);
-				checkType(cons, Object::TypeCons);
-				ret = eval(car(cons));
-
-				scope->set(name->stringValue(), ret);
-
-				cons = cdr(cons);
-			}
-			return ret;
-		}
-		else if (name == "quote") {
-			checkType(cdr(object), Object::TypeCons);
-			return car(cdr(object));
-		}
-		else if (name == "lambda") {
-			Object *varsCons = cdr(object);
-			checkType(varsCons, Object::TypeCons);
-
-			std::vector<std::string> variables;
-			Object *varCons = car(varsCons);
-			checkType(varCons, Object::TypeCons);
-			for (; varCons != nil(); varCons = cdr(varCons)) {
-				checkType(car(varCons), Object::TypeAtom);
-				variables.push_back(car(varCons)->stringValue());
-			}
-			Object *ret = new Object;
-			ret->setLambda(std::move(variables), cdr(varsCons));
-			return ret;
-		}
-	}
-
-	Object *lambda = eval(head, scope);
+	Object *function = car(object);
 	Object *args = cdr(object);
-	checkType(lambda, Object::Type::TypeLambda);
 
-	std::map<std::string, Object*> vars;
-	Object *argCons = args;
-	for(int i=0; i<lambda->lambdaValue().variables.size(); i++) {
-		checkType(argCons, Object::Type::TypeCons);
-		vars[lambda->lambdaValue().variables[i]] = eval(car(argCons));
-		argCons = cdr(argCons);
+	if (function->type() == Object::TypeAtom) {
+		bool handled;
+		Object *ret = evalSpecialForm(object, scope, handled);
+		if (handled) {
+			return ret;
+		}
 	}
 
-	if (argCons != nil()) {
+	function = eval(function, scope);
+	if (function->type() == Object::TypeLambda) {
+		std::map<std::string, Object*> vars;
+		Object *argCons = args;
+		for (int i = 0; i < function->lambdaValue().variables.size(); i++) {
+			checkType(argCons, Object::Type::TypeCons);
+			vars[function->lambdaValue().variables[i]] = eval(car(argCons));
+			argCons = cdr(argCons);
+		}
+
+		if (argCons != nil()) {
+			std::stringstream ss;
+			ss << "Incorrect number of arguments to function " << function << ": " << args;
+			throw Error(ss.str());
+		}
+
+		Scope *newScope = new Scope(scope, std::move(vars));
+		Object *ret = 0;
+		for (Object *cons = function->lambdaValue().body; cons != nil(); cons = cdr(cons)) {
+			ret = eval(car(cons), newScope);
+		}
+		return ret;
+	}
+	else if (function->type() == Object::TypeNativeFunction)
+	{
+		return function->nativeFunctionValue()(args);
+	}
+	else {
 		std::stringstream ss;
-		ss << "Incorrect number of arguments to function " << lambda << ": " << args;
+		ss << "Object " << function << " must be a valid function.";
 		throw Error(ss.str());
 	}
 
-	Scope *newScope = new Scope(scope, std::move(vars));
-	Object *ret = 0;
-	for (Object *cons = lambda->lambdaValue().body; cons != nil(); cons = cdr(cons)) {
-		ret = eval(car(cons), newScope);
-	}
-
-	return ret;
+	return 0;
 }
 
 Object *Context::car(Object *object)

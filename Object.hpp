@@ -13,7 +13,8 @@ public:
 		TypeString,
 		TypeAtom,
 		TypeCons,
-		TypeLambda
+		TypeLambda,
+		TypeNativeFunction
 	};
 
 	struct Cons {
@@ -26,6 +27,8 @@ public:
 		Object *body;
 	};
 
+	typedef Object *(*NativeFunction)(Object*);
+
 	Type type() const;
 
 	void setNone();
@@ -35,11 +38,13 @@ public:
 	void setAtom(const std::string &value);
 	void setCons(Object *car, Object *cdr);
 	void setLambda(std::vector<std::string> &&variables, Object *body);
+	void setNativeFunction(NativeFunction nativeFunction);
 
 	int intValue() const;
 	const std::string &stringValue() const;
 	const Cons &consValue() const;
 	const Lambda &lambdaValue() const;
+	NativeFunction nativeFunctionValue() const;
 
 	void dispose();
 
@@ -51,6 +56,7 @@ private:
 		std::string *stringValue;
 		Cons consValue;
 		Lambda *lambdaValue;
+		NativeFunction nativeFunctionValue;
 	} mData;
 };
 

@@ -53,6 +53,12 @@ void Object::setLambda(std::vector<std::string> &&variables, Object *body)
 	mData.lambdaValue = lambda;
 }
 
+void Object::setNativeFunction(NativeFunction nativeFunction)
+{
+	mType = TypeNativeFunction;
+	mData.nativeFunctionValue = nativeFunction;
+}
+
 int Object::intValue() const
 {
 	return mData.intValue;
@@ -71,6 +77,11 @@ const Object::Cons &Object::consValue() const
 const Object::Lambda &Object::lambdaValue() const
 {
 	return *mData.lambdaValue;
+}
+
+Object::NativeFunction Object::nativeFunctionValue() const
+{
+	return mData.nativeFunctionValue;
 }
 
 void Object::dispose()
