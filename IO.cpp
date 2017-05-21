@@ -82,7 +82,7 @@ Object *IO::read(std::istream &i, Context *context)
 		i.unget();
 		while (!i.fail() && !i.eof()) {
 			c = i.get();
-			if (c == ')' || std::isspace(c)) {
+			if (c == ')' || std::isspace(c) || i.fail() || i.eof()) {
 				i.unget();
 				break;
 			}

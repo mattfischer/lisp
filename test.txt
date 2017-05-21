@@ -1,0 +1,17 @@
+in: 2
+eval: 2
+
+in: (+ 2 2)
+eval: 4
+
+in: (+ (+ 2 2) 3)
+eval: 7
+
+in: ((lambda (x) (+ x 1)) 2)
+eval: 3
+
+in: ((lambda (f) (f 3 5)) *)
+eval: 15
+
+in: x
+error: No symbol x defined
