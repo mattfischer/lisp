@@ -87,7 +87,7 @@ Object *Context::evalCons(Object *object, Scope *scope)
 	Object *head = car(object);
 
 	if (head->type() == Object::TypeAtom) {
-		std::string name(head->stringValue());
+		const std::string &name = head->stringValue();
 
 		if (name == "+") {
 			Object *a, *b;
@@ -156,19 +156,15 @@ Object *Context::evalCons(Object *object, Scope *scope)
 			Object *varsCons = cdr(object);
 			checkType(varsCons, Object::TypeCons);
 
-			std::vector<std::string> varVector;
+			std::vector<std::string> variables;
 			Object *varCons = car(varsCons);
 			checkType(varCons, Object::TypeCons);
 			for (; varCons != nil(); varCons = cdr(varCons)) {
 				checkType(car(varCons), Object::TypeAtom);
-				varVector.push_back(car(varCons)->stringValue());
-			}
-			char **vars = new char*[varVector.size()];
-			for (int i = 0; i < varVector.size(); i++) {
-				vars[i] = strdup(varVector[i].c_str());
+				variables.push_back(car(varCons)->stringValue());
 			}
 			Object *ret = new Object;
-			ret->setLambda(varVector.size(), vars, cdr(varsCons));
+			ret->setLambda(std::move(variables), cdr(varsCons));
 			return ret;
 		}
 	}
@@ -179,7 +175,7 @@ Object *Context::evalCons(Object *object, Scope *scope)
 
 	std::map<std::string, Object*> vars;
 	Object *argCons = args;
-	for(int i=0; i<lambda->lambdaValue().numVariables; i++) {
+	for(int i=0; i<lambda->lambdaValue().variables.size(); i++) {
 		checkType(argCons, Object::Type::TypeCons);
 		vars[lambda->lambdaValue().variables[i]] = eval(car(argCons));
 		argCons = cdr(argCons);

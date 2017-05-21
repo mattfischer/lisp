@@ -23,16 +23,16 @@ void Object::setInt(int value)
 	mData.intValue = value;
 }
 
-void Object::setString(const char *value)
+void Object::setString(const std::string &value)
 {
 	mType = TypeString;
-	mData.stringValue = strdup(value);
+	mData.stringValue = new std::string(value);
 }
 
-void Object::setAtom(const char *value)
+void Object::setAtom(const std::string &value)
 {
 	mType = TypeAtom;
-	mData.stringValue = strdup(value);
+	mData.stringValue = new std::string(value);
 }
 
 void Object::setCons(Object *car, Object *cdr)
@@ -42,12 +42,15 @@ void Object::setCons(Object *car, Object *cdr)
 	mData.consValue.cdr = cdr;
 }
 
-void Object::setLambda(int numVariables, char **variables, Object *body)
+void Object::setLambda(std::vector<std::string> &&variables, Object *body)
 {
 	mType = TypeLambda;
-	mData.lambdaValue.numVariables = numVariables;
-	mData.lambdaValue.variables = variables;
-	mData.lambdaValue.body = body;
+	
+	Lambda *lambda = new Lambda;
+	lambda->variables = std::move(variables);
+	lambda->body = body;
+
+	mData.lambdaValue = lambda;
 }
 
 int Object::intValue() const
@@ -55,9 +58,9 @@ int Object::intValue() const
 	return mData.intValue;
 }
 
-const char *Object::stringValue() const
+const std::string &Object::stringValue() const
 {
-	return mData.stringValue;
+	return *mData.stringValue;
 }
 
 const Object::Cons &Object::consValue() const
@@ -67,7 +70,7 @@ const Object::Cons &Object::consValue() const
 
 const Object::Lambda &Object::lambdaValue() const
 {
-	return mData.lambdaValue;
+	return *mData.lambdaValue;
 }
 
 void Object::dispose()
@@ -75,14 +78,11 @@ void Object::dispose()
 	switch (mType) {
 	case TypeString:
 	case TypeAtom:
-		free(mData.stringValue);
+		delete mData.stringValue;
 		break;
 
 	case TypeLambda:
-		for (int i = 0; i < mData.lambdaValue.numVariables; i++) {
-			free(mData.lambdaValue.variables[i]);
-		}
-		free(mData.lambdaValue.variables);
+		delete mData.lambdaValue;
 		break;
 
 	default:
