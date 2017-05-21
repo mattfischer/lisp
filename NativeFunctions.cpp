@@ -27,7 +27,7 @@ void getArgs(Object *object, int length, ...)
 
 	if (objectLength != length) {
 		std::stringstream ss;
-		ss << "List " << object << " is of incorrect length (expected " << length + 1 << " got " << objectLength + 1 << ")";
+		ss << "Argument list " << object << " is of incorrect length (expected " << length << " got " << objectLength << ")";
 		throw Error(ss.str());
 	}
 }

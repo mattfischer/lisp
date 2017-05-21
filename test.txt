@@ -15,3 +15,15 @@ eval: 15
 
 in: x
 error: No symbol x defined
+
+in: (+ 2 2 2)
+error: Argument list (2 2 2) is of incorrect length (expected 2 got 3)
+
+in: ((lambda (x) (set! x 2) x) 1)
+eval: 2
+
+in: (quote (1 2 3))
+eval: (1 2 3)
+
+in: '(1 2 3)
+eval: (1 2 3)
