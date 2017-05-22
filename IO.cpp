@@ -65,16 +65,16 @@ Object *IO::read(std::istream &i, Context *context)
 				break;
 			}
 			i.unget();
-			Object *car = read(i, context);
-			Object *cons = new Object();
-			cons->setCons(car, context->nil());
+			Object *item = read(i, context);
+			Object *newCons = new Object();
+			newCons->setCons(item, context->nil());
 			if (prev == context->nil()) {
-				object = cons;
+				object = newCons;
 			}
 			else {
-				prev->setCons(prev->consValue().car, cons);
+				prev->setCons(prev->consValue().car, newCons);
 			}
-			prev = cons;
+			prev = newCons;
 		}
 	}
 	else {
