@@ -58,6 +58,7 @@ Object *IO::read(std::istream &i, Context *context)
 	else if (c == '(')
 	{
 		Object *prev = context->nil();
+		object = context->nil();
 		while (true) {
 			eatWhitespace(i);
 			c = i.get();

@@ -27,12 +27,15 @@ Object *Scope::get(const std::string &name)
 	}
 }
 
-void Scope::set(const std::string &name, Object *value)
+void Scope::set(const std::string &name, Object *value, bool create)
 {
 	std::map<std::string, Object*>::iterator it = mVariables.find(name);
 	if (it == mVariables.end()) {
-		if (mParent) {
-			mParent->set(name, value);
+		if (create) {
+			mVariables[name] = value;
+		}
+		else if (mParent) {
+			mParent->set(name, value, false);
 		}
 		else {
 			std::stringstream ss;

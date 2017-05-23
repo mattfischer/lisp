@@ -10,7 +10,7 @@ public:
 	Scope(Scope *parent, std::map<std::string, Object*> &&variables);
 
 	Object *get(const std::string &name);
-	void set(const std::string &name, Object *value);
+	void set(const std::string &name, Object *value, bool create);
 
 private:
 	Scope *mParent;

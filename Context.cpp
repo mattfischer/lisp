@@ -97,7 +97,8 @@ bool Context::evalSpecialForm(Object *object, Scope *scope, Object *&ret)
 {
 	const std::string &name = car(object)->stringValue();
 
-	if (name == "set!") {
+	if (name == "set!" || name == "define") {
+		bool isDefine = (name == "define");
 		Object *cons = cdr(object);
 		ret = nil();
 		for(Object *cons = cdr(object); cons->type() == Object::TypeCons; cons = cdr(cdr(cons))) {
@@ -108,7 +109,7 @@ bool Context::evalSpecialForm(Object *object, Scope *scope, Object *&ret)
 			Object *value = car(cdr(cons));
 			ret = eval(value);
 
-			scope->set(name->stringValue(), ret);
+			scope->set(name->stringValue(), ret, isDefine);
 		}
 		return true;
 	}
