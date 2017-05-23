@@ -131,6 +131,24 @@ bool Context::evalSpecialForm(Object *object, Scope *scope, Object *&ret)
 		ret->setLambda(std::move(variables), cdr(cdr(object)));
 		return true;
 	}
+	else if (name == "if") {
+		Object *test = cdr(object);
+		checkType(test, Object::TypeCons);
+
+		Object *consequent = cdr(test);
+		checkType(consequent, Object::TypeCons);
+
+		Object *alternative = cdr(consequent);
+		checkType(alternative, Object::TypeCons);
+
+		if (eval(car(test), scope) != nil()) {
+			ret = eval(car(consequent));
+		}
+		else {
+			ret = eval(car(alternative));
+		}
+		return true;
+	}
 	
 	return false;
 }
