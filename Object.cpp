@@ -59,6 +59,11 @@ void Object::setNativeFunction(NativeFunction nativeFunction)
 	mData.nativeFunctionValue = nativeFunction;
 }
 
+void Object::setEllipses()
+{
+	mType = TypeEllipses;
+}
+
 int Object::intValue() const
 {
 	return mData.intValue;

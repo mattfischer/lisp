@@ -28,6 +28,9 @@
     <ClCompile Include="NativeFunctions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Syntax.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Object.hpp">
@@ -46,6 +49,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="NativeFunctions.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Syntax.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

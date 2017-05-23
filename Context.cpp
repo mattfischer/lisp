@@ -2,6 +2,7 @@
 #include "Error.hpp"
 #include "IO.hpp"
 #include "NativeFunctions.hpp"
+#include "Syntax.hpp"
 
 #include <cstdarg>
 #include <sstream>
@@ -101,7 +102,7 @@ bool Context::evalSpecialForm(Object *object, Scope *scope, Object *&ret)
 		bool isDefine = (name == "define");
 		Object *cons = cdr(object);
 		ret = nil();
-		for(Object *cons = cdr(object); cons->type() == Object::TypeCons; cons = cdr(cdr(cons))) {
+		for (Object *cons = cdr(object); cons->type() == Object::TypeCons; cons = cdr(cdr(cons))) {
 			Object *name = car(cons);
 			checkType(name, Object::TypeAtom);
 
@@ -148,6 +149,58 @@ bool Context::evalSpecialForm(Object *object, Scope *scope, Object *&ret)
 			ret = eval(car(alternative));
 		}
 		return true;
+	}
+	else if (name == "define-syntax") {
+		checkType(cdr(object), Object::TypeCons);
+		checkType(car(cdr(object)), Object::TypeAtom);
+		std::string keyword = car(cdr(object))->stringValue();
+
+		checkType(cdr(cdr(object)), Object::TypeCons);
+		Object *syntaxRules = car(cdr(cdr(object)));
+		checkType(syntaxRules, Object::TypeCons);
+		checkType(car(syntaxRules), Object::TypeAtom);
+		if (car(syntaxRules)->stringValue() != "syntax-rules") {
+			std::stringstream ss;
+			ss << "Invalid expression " << syntaxRules << " in define-syntax";
+			throw Error(ss.str());
+		}
+
+		checkType(cdr(syntaxRules), Object::TypeCons);
+		Object *lits = car(cdr(syntaxRules));
+		std::vector<std::string> literals;
+		for (Object *cons = lits; cons->type() == Object::TypeCons; cons = cdr(cons)) {
+			Object *lit = car(cons);
+			checkType(lit, Object::TypeAtom);
+			literals.push_back(lit->stringValue());
+		}
+
+		std::vector<Syntax::Rule> rules;
+		for (Object *cons = cdr(cdr(syntaxRules)); cons->type() == Object::TypeCons; cons = cdr(cons)) {
+			Object *rule = car(cons);
+			checkType(rule, Object::TypeCons);
+
+			Object *pattern = car(rule);
+			checkType(pattern, Object::TypeCons);
+
+			checkType(cdr(rule), Object::TypeCons);
+			Object *templ = car(cdr(rule));
+
+			Syntax::Rule newRule;
+			newRule.pattern = pattern;
+			newRule.templ = templ;
+			rules.push_back(newRule);
+		}
+		Syntax *syntax = new Syntax(std::move(rules));
+		scope->setSyntax(keyword, syntax, true);
+		ret = nil();
+		return true;
+	}
+	else if (scope->containsSyntax(name)) {
+		Syntax *syntax = scope->getSyntax(name);
+		if (syntax->transform(object, ret, nil())) {
+			ret = eval(ret, scope);
+			return true;
+		}
 	}
 	
 	return false;

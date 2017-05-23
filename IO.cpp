@@ -96,6 +96,10 @@ Object *IO::read(std::istream &i, Context *context)
 		else if (value == "t") {
 			object = context->t();
 		}
+		else if (value == "...") {
+			object = new Object();
+			object->setEllipses();
+		}
 		else {
 			object = new Object();
 			object->setAtom(value.c_str());
