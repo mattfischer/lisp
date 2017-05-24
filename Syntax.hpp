@@ -18,8 +18,8 @@ public:
 	bool transform(Object *object, Object *&ret, Object *nil);
 
 private:
-	bool matchPattern(Object *object, Object *pattern, std::map<std::string, Object*> &matches);
-	Object *applyTemplate(Object *templ, const std::map<std::string, Object*> &matches, Object *nil);
+	bool matchPattern(Object *object, Object *pattern, std::map<std::string, Object*> &matches, Object *nil);
+	bool applyTemplate(Object *templ, std::map<std::string, Object*> &matches, Object *nil, Object *&result);
 
 	std::vector<Rule> mRules;
 };
