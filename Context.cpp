@@ -7,6 +7,11 @@
 #include <cstdarg>
 #include <sstream>
 
+const char *syntaxes[] = {
+	"(define-syntax begin (syntax-rules () ((_ x ...) ((lambda () x ...)))))",
+	"(define-syntax let (syntax-rules () ((_ ((x y) ...) z ...) ((lambda (x ...) z ...) y ...))))"
+};
+
 Context::Context()
 {
 	std::map<std::string, Object*> variables;
@@ -27,6 +32,13 @@ Context::Context()
 	variables.insert(functions.begin(), functions.end());
 
 	mRootScope = new Scope(0, std::move(variables));
+
+	for (const char *syntax : syntaxes) {
+		std::stringstream ss;
+		ss << syntax;
+		Object *object = IO::read(ss, this);
+		eval(object);
+	}
 }
 
 Object *Context::eval(Object *object)
