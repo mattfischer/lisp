@@ -2,14 +2,14 @@
 #define IO_HPP
 
 #include "Object.hpp"
-#include "Context.hpp"
+#include "ObjectPool.hpp"
 
 #include <istream>
 #include <ostream>
 
 class IO {
 public:
-	static Object *read(std::istream &i, Context *context);
+	static Object *read(std::istream &i, ObjectPool *pool);
 	static void print(std::ostream &o, const Object *object);
 };
 

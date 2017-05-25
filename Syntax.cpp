@@ -5,12 +5,12 @@ Syntax::Syntax(std::vector<Rule> &&rules)
 {
 }
 
-bool Syntax::transform(Object *object, Object *&ret, Object *nil)
+bool Syntax::transform(Object *object, Object *&ret, ObjectPool *pool)
 {
 	for (const Rule &rule : mRules) {
 		std::map<std::string, Object*> matches;
-		if (matchPattern(object, rule.pattern, matches, nil)) {
-			applyTemplate(rule.templ, matches, nil, ret);
+		if (matchPattern(object, rule.pattern, matches, pool)) {
+			applyTemplate(rule.templ, matches, pool, ret);
 			return true;
 		}
 	}
@@ -28,23 +28,20 @@ Object *cdr(Object *object)
 	return object->consValue().cdr;
 }
 
-bool Syntax::matchPattern(Object *object, Object *pattern, std::map<std::string, Object*> &matches, Object *nil)
+bool Syntax::matchPattern(Object *object, Object *pattern, std::map<std::string, Object*> &matches, ObjectPool *pool)
 {
 	if (pattern->type() == Object::TypeAtom) {
-		Object *newCons = new Object();
-		newCons->setCons(object, nil);
-
 		const std::string &name = pattern->stringValue();
 		std::map<std::string, Object*>::iterator it = matches.find(name);
 		if (it == matches.end()) {
-			matches[name] = newCons;
+			matches[name] = pool->newCons(object, pool->newNone());
 		}
 		else {
 			Object *cons = matches[name];
 			while (cdr(cons)->type() == Object::TypeCons) {
 				cons = cdr(cons);
 			}
-			cons->setCons(car(cons), newCons);
+			cons->setCons(car(cons), pool->newCons(object, cdr(cons)));
 		}
 		return true;
 	}
@@ -52,13 +49,13 @@ bool Syntax::matchPattern(Object *object, Object *pattern, std::map<std::string,
 		for (; pattern->type() != Object::TypeNone && object->type() != Object::TypeNone;) {
 			bool ellipses = false;
 			if (cdr(pattern)->type() == Object::TypeCons && car(cdr(pattern))->type() == Object::TypeEllipses) {
-				while (object->type() == Object::TypeCons && matchPattern(car(object), car(pattern), matches, nil)) {
+				while (object->type() == Object::TypeCons && matchPattern(car(object), car(pattern), matches, pool)) {
 					object = cdr(object);
 				}
 				pattern = cdr(cdr(pattern));
 			}
 			else {
-				if (!matchPattern(car(object), car(pattern), matches, nil)) {
+				if (!matchPattern(car(object), car(pattern), matches, pool)) {
 					return false;
 				}
 				pattern = cdr(pattern);
@@ -74,8 +71,9 @@ bool Syntax::matchPattern(Object *object, Object *pattern, std::map<std::string,
 	return false;
 }
 
-bool Syntax::applyTemplate(Object *templ, std::map<std::string, Object*> &matches, Object *nil, Object *&result)
+bool Syntax::applyTemplate(Object *templ, std::map<std::string, Object*> &matches, ObjectPool *pool, Object *&result)
 {
+	Object *nil = pool->newNone();
 	Object *prev = nil;
 	bool ret = false;
 
@@ -104,13 +102,12 @@ bool Syntax::applyTemplate(Object *templ, std::map<std::string, Object*> &matche
 			bool canRepeat = false;
 			do {
 				Object *item;
-				canRepeat = applyTemplate(car(cons), matches, nil, item);
+				canRepeat = applyTemplate(car(cons), matches, pool, item);
 				if (!canRepeat) {
 					ret = false;
 				}
 
-				Object *newCons = new Object();
-				newCons->setCons(item, nil);
+				Object *newCons = pool->newCons(item, nil);
 				if (prev == nil) {
 					result = newCons;
 				}

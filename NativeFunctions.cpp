@@ -32,7 +32,7 @@ void getArgs(Object *object, int length, ...)
 	}
 }
 
-Object *add(Object *args)
+Object *add(Object *args, ObjectPool *pool)
 {
 	Object *a, *b;
 	getArgs(args, 2, Object::TypeInt, &a, Object::TypeInt, &b);
@@ -42,7 +42,7 @@ Object *add(Object *args)
 	return ret;
 }
 
-Object *subtract(Object *args)
+Object *subtract(Object *args, ObjectPool *pool)
 {
 	Object *a, *b;
 	getArgs(args, 2, Object::TypeInt, &a, Object::TypeInt, &b);
@@ -52,7 +52,7 @@ Object *subtract(Object *args)
 	return ret;
 }
 
-Object *multiply(Object *args)
+Object *multiply(Object *args, ObjectPool *pool)
 {
 	Object *a, *b;
 	getArgs(args, 2, Object::TypeInt, &a, Object::TypeInt, &b);
@@ -62,7 +62,7 @@ Object *multiply(Object *args)
 	return ret;
 }
 
-Object *divide(Object *args)
+Object *divide(Object *args, ObjectPool *pool)
 {
 	Object *a, *b;
 	getArgs(args, 2, Object::TypeInt, &a, Object::TypeInt, &b);
@@ -72,26 +72,14 @@ Object *divide(Object *args)
 	return ret;
 }
 
-std::map<std::string, Object*> NativeFunctions::functions()
+std::map<std::string, Object*> NativeFunctions::functions(ObjectPool *pool)
 {
 	std::map<std::string, Object*> functions;
-	Object *object;
 
-	object = new Object();
-	object->setNativeFunction(add);
-	functions["+"] = object;
-
-	object = new Object();
-	object->setNativeFunction(subtract);
-	functions["-"] = object;
-
-	object = new Object();
-	object->setNativeFunction(multiply);
-	functions["*"] = object;
-
-	object = new Object();
-	object->setNativeFunction(divide);
-	functions["/"] = object;
+	functions["+"] = pool->newNativeFunction(add);
+	functions["-"] = pool->newNativeFunction(subtract);
+	functions["*"] = pool->newNativeFunction(multiply);
+	functions["/"] = pool->newNativeFunction(divide);
 
 	return functions;
 }

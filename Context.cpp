@@ -14,29 +14,16 @@ const char *syntaxes[] = {
 
 Context::Context()
 {
-	std::map<std::string, Object*> variables;
+	mPool = new ObjectPool;
 
-	Object *object;
+	std::map<std::string, Object*> functions = NativeFunctions::functions(mPool);
 
-	object = new Object();
-	object->setNone();
-	variables["nil"] = object;
-	mNil = object;
-
-	object = new Object();
-	object->setT();
-	variables["t"] = object;
-	mT = object;
-	
-	std::map<std::string, Object*> functions = NativeFunctions::functions();
-	variables.insert(functions.begin(), functions.end());
-
-	mRootScope = new Scope(0, std::move(variables));
+	mRootScope = new Scope(0, std::move(functions));
 
 	for (const char *syntax : syntaxes) {
 		std::stringstream ss;
 		ss << syntax;
-		Object *object = IO::read(ss, this);
+		Object *object = IO::read(ss, mPool);
 		eval(object);
 	}
 }
@@ -46,14 +33,9 @@ Object *Context::eval(Object *object)
 	return eval(object, mRootScope);
 }
 
-Object *Context::nil()
+ObjectPool *Context::pool()
 {
-	return mNil;
-}
-
-Object *Context::t()
-{
-	return mT;
+	return mPool;
 }
 
 Object *Context::eval(Object *object, Scope *scope)
@@ -83,7 +65,7 @@ Object *Context::eval(Object *object, Scope *scope)
 		}
 		else if (function->type() == Object::TypeNativeFunction)
 		{
-			return function->nativeFunctionValue()(args);
+			return function->nativeFunctionValue()(args, mPool);
 		}
 		else {
 			std::stringstream ss;
@@ -93,7 +75,7 @@ Object *Context::eval(Object *object, Scope *scope)
 	}
 
 	default:
-		return 0;
+		return mPool->newNone();
 	}
 }
 
@@ -113,7 +95,7 @@ bool Context::evalSpecialForm(Object *object, Scope *scope, Object *&ret)
 	if (name == "set!" || name == "define") {
 		bool isDefine = (name == "define");
 		Object *cons = cdr(object);
-		ret = nil();
+		ret = mPool->newNone();
 		for (Object *cons = cdr(object); cons->type() == Object::TypeCons; cons = cdr(cdr(cons))) {
 			Object *name = car(cons);
 			checkType(name, Object::TypeAtom);
@@ -137,8 +119,7 @@ bool Context::evalSpecialForm(Object *object, Scope *scope, Object *&ret)
 			checkType(car(var), Object::TypeAtom);
 			variables.push_back(car(var)->stringValue());
 		}
-		ret = new Object;
-		ret->setLambda(std::move(variables), cdr(cdr(object)));
+		ret = mPool->newLambda(std::move(variables), cdr(cdr(object)));
 		return true;
 	}
 	else if (name == "if") {
@@ -146,7 +127,8 @@ bool Context::evalSpecialForm(Object *object, Scope *scope, Object *&ret)
 		Object *consequent = cdr(test);
 		Object *alternative = cdr(consequent);
 
-		if (eval(car(test), scope) != nil()) {
+		Object *result = eval(car(test));
+		if (result->type() != Object::TypeBool || result->boolValue()) {
 			ret = eval(car(consequent));
 		}
 		else {
@@ -191,12 +173,12 @@ bool Context::evalSpecialForm(Object *object, Scope *scope, Object *&ret)
 		}
 		Syntax *syntax = new Syntax(std::move(rules));
 		scope->setSyntax(keyword, syntax, true);
-		ret = nil();
+		ret = mPool->newNone();
 		return true;
 	}
 	else if (scope->containsSyntax(name)) {
 		Syntax *syntax = scope->getSyntax(name);
-		if (syntax->transform(object, ret, nil())) {
+		if (syntax->transform(object, ret, mPool)) {
 			ret = eval(ret, scope);
 			return true;
 		}
@@ -207,13 +189,13 @@ bool Context::evalSpecialForm(Object *object, Scope *scope, Object *&ret)
 
 Object *Context::evalCons(Object *object, Scope *scope)
 {
-	Object *ret = nil();
-	Object *prev = nil();
-	for (Object *cons = object; cons != nil(); cons = cdr(cons)) {
+	Object *nil = mPool->newNone();
+	Object *ret = nil;
+	Object *prev = nil;
+	for (Object *cons = object; cons->type() == Object::TypeCons; cons = cdr(cons)) {
 		Object *item = eval(car(cons), scope);
-		Object *newCons = new Object();
-		newCons->setCons(item, nil());
-		if (prev == nil()) {
+		Object *newCons = mPool->newCons(item, nil);
+		if (prev == nil) {
 			ret = newCons;
 		}
 		else {
@@ -230,14 +212,14 @@ Object *Context::evalLambda(Object *lambda, Object *args, Scope *scope)
 	std::map<std::string, Object*> vars;
 	Object *arg = args;
 	for (int i = 0; i < lambda->lambdaValue().variables.size(); i++) {
-		if (arg == nil()) {
+		if (arg->type() != Object::TypeCons) {
 			break;
 		}
 		vars[lambda->lambdaValue().variables[i]] = car(arg);
 		arg = cdr(arg);
 	}
 
-	if (arg != nil() || vars.size() < lambda->lambdaValue().variables.size()) {
+	if (arg->type() != Object::TypeNone || vars.size() < lambda->lambdaValue().variables.size()) {
 		std::stringstream ss;
 		ss << "Incorrect number of arguments to function " << lambda << ": " << args;
 		throw Error(ss.str());
@@ -245,7 +227,7 @@ Object *Context::evalLambda(Object *lambda, Object *args, Scope *scope)
 
 	Scope *newScope = new Scope(scope, std::move(vars));
 	Object *ret = 0;
-	for (Object *cons = lambda->lambdaValue().body; cons != nil(); cons = cdr(cons)) {
+	for (Object *cons = lambda->lambdaValue().body; cons->type() == Object::TypeCons; cons = cdr(cons)) {
 		ret = eval(car(cons), newScope);
 	}
 	return ret;

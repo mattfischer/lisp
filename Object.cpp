@@ -12,9 +12,10 @@ void Object::setNone()
 	mType = TypeNone;
 }
 
-void Object::setT()
+void Object::setBool(bool value)
 {
-	mType = TypeT;
+	mType = TypeBool;
+	mData.boolValue = value;
 }
 
 void Object::setInt(int value)
@@ -67,6 +68,11 @@ void Object::setEllipses()
 int Object::intValue() const
 {
 	return mData.intValue;
+}
+
+bool Object::boolValue() const
+{
+	return mData.boolValue;
 }
 
 const std::string &Object::stringValue() const

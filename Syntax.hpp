@@ -2,6 +2,7 @@
 #define SYNTAX_HPP
 
 #include "Object.hpp"
+#include "ObjectPool.hpp"
 
 #include <map>
 #include <string>
@@ -15,11 +16,11 @@ public:
 
 	Syntax(std::vector<Rule> &&rules);
 
-	bool transform(Object *object, Object *&ret, Object *nil);
+	bool transform(Object *object, Object *&ret, ObjectPool *pool);
 
 private:
-	bool matchPattern(Object *object, Object *pattern, std::map<std::string, Object*> &matches, Object *nil);
-	bool applyTemplate(Object *templ, std::map<std::string, Object*> &matches, Object *nil, Object *&result);
+	bool matchPattern(Object *object, Object *pattern, std::map<std::string, Object*> &matches, ObjectPool *pool);
+	bool applyTemplate(Object *templ, std::map<std::string, Object*> &matches, ObjectPool *pool, Object *&result);
 
 	std::vector<Rule> mRules;
 };

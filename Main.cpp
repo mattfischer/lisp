@@ -40,7 +40,7 @@ int test(const std::string &filename)
 
 		Context context;
 		std::stringstream ss(input);
-		Object *object = IO::read(ss, &context);
+		Object *object = IO::read(ss, context.pool());
 
 		std::string gotEval;
 		std::string gotError;
@@ -87,7 +87,7 @@ int repl()
 
 	do {
 		try {
-			obj = IO::read(std::cin, &context);
+			obj = IO::read(std::cin, context.pool());
 			obj = context.eval(obj);
 			std::cout << obj << std::endl;
 		}
@@ -95,7 +95,7 @@ int repl()
 			std::cerr << "Error: " << error.message() << std::endl;
 			return 1;
 		}
-	} while (obj != context.nil());
+	} while (obj->type() != Object::TypeNone);
 
 	return 0;
 }

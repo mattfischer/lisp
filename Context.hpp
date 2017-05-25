@@ -3,6 +3,7 @@
 
 #include "Object.hpp"
 #include "Scope.hpp"
+#include "ObjectPool.hpp"
 
 class Context {
 public:
@@ -10,8 +11,7 @@ public:
 
 	Object *eval(Object *object);
 
-	Object *nil();
-	Object *t();
+	ObjectPool *pool();
 
 private:
 	Object *eval(Object *object, Scope *scope);
@@ -24,9 +24,8 @@ private:
 	Object *car(Object *object);
 	Object *cdr(Object *object);
 
-	Object *mNil;
-	Object *mT;
 	Scope *mRootScope;
+	ObjectPool *mPool;
 };
 
 #endif

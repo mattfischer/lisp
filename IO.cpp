@@ -18,9 +18,9 @@ static void eatWhitespace(std::istream &i)
 	}
 }
 
-Object *IO::read(std::istream &i, Context *context)
+Object *IO::read(std::istream &i, ObjectPool *pool)
 {
-	Object *object = context->nil();
+	Object *object;
 
 	eatWhitespace(i);
 
@@ -32,18 +32,15 @@ Object *IO::read(std::istream &i, Context *context)
 
 	if (c == '\'') {
 		object = new Object();
-		Object *car = new Object();
-		car->setAtom("quote");
-		Object *cdr = new Object();
-		cdr->setCons(read(i, context), context->nil());
-		object->setCons(car, cdr);
+		Object *car = pool->newAtom("quote");
+		Object *cdr = pool->newCons(read(i, pool), pool->newNone());
+		object = pool->newCons(car, cdr);
 	}
 	else if (std::isdigit(c)) {
 		int value;
 		i.unget();
 		i >> value;
-		object = new Object();
-		object->setInt(value);
+		object = pool->newInt(value);
 	}
 	else if (c == '\"')
 	{
@@ -55,15 +52,15 @@ Object *IO::read(std::istream &i, Context *context)
 			}
 			value.push_back(c);
 		}
-		object = new Object();
-		object->setString(value.c_str());
+		object = pool->newString(value.c_str());
 	}
 	else if (c == '(' || c == '[')
 	{
 		char end = (c == '(') ? ')' : ']';
 
-		Object *prev = context->nil();
-		object = context->nil();
+		Object *nil = pool->newNone();
+		Object *prev = nil;
+		object = nil;
 		while (true) {
 			eatWhitespace(i);
 			c = i.get();
@@ -76,10 +73,9 @@ Object *IO::read(std::istream &i, Context *context)
 				throw Error(ss.str());
 			}
 			i.unget();
-			Object *item = read(i, context);
-			Object *newCons = new Object();
-			newCons->setCons(item, context->nil());
-			if (prev == context->nil()) {
+			Object *item = read(i, pool);
+			Object *newCons = pool->newCons(item, nil);
+			if (prev == nil) {
 				object = newCons;
 			}
 			else {
@@ -100,19 +96,17 @@ Object *IO::read(std::istream &i, Context *context)
 			value.push_back(c);
 		}
 
-		if (value == "nil") {
-			object = context->nil();
+		if (value == "#t") {
+			object = pool->newBool(true);
 		}
-		else if (value == "t") {
-			object = context->t();
+		else if (value == "#f") {
+			object = pool->newBool(false);
 		}
 		else if (value == "...") {
-			object = new Object();
-			object->setEllipses();
+			object = pool->newEllipses();
 		}
 		else {
-			object = new Object();
-			object->setAtom(value.c_str());
+			object = pool->newAtom(value);
 		}
 	}
 
@@ -123,11 +117,16 @@ void IO::print(std::ostream &o, const Object *object)
 {
 	switch (object->type()) {
 	case Object::TypeNone:
-		o << "nil";
+		o << "()";
 		break;
 
-	case Object::TypeT:
-		o << "t";
+	case Object::TypeBool:
+		if (object->boolValue()) {
+			o << "#t";
+		}
+		else {
+			o << "#f";
+		}
 		break;
 
 	case Object::TypeInt:
@@ -172,8 +171,8 @@ std::ostream &operator<<(std::ostream &o, Object::Type type)
 		o << "nil";
 		break;
 
-	case Object::TypeT:
-		o << "t";
+	case Object::TypeBool:
+		o << "bool";
 		break;
 
 	case Object::TypeInt:
