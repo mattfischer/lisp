@@ -46,7 +46,7 @@ Object *Context::eval(Object *object, Scope *scope)
 	case Object::TypeString:
 		return object;
 
-	case Object::TypeAtom:
+	case Object::TypeSymbol:
 		return scope->get(object->stringValue());
 
 	case Object::TypeCons:
@@ -98,7 +98,7 @@ bool Context::evalSpecialForm(Object *object, Scope *scope, Object *&ret)
 		ret = mPool->newNone();
 		for (Object *cons = cdr(object); cons->type() == Object::TypeCons; cons = cdr(cdr(cons))) {
 			Object *name = car(cons);
-			checkType(name, Object::TypeAtom);
+			checkType(name, Object::TypeSymbol);
 
 			Object *value = car(cdr(cons));
 			ret = eval(value);
@@ -116,7 +116,7 @@ bool Context::evalSpecialForm(Object *object, Scope *scope, Object *&ret)
 
 		std::vector<std::string> variables;
 		for (Object *var = vars; var->type() == Object::TypeCons; var = cdr(var)) {
-			checkType(car(var), Object::TypeAtom);
+			checkType(car(var), Object::TypeSymbol);
 			variables.push_back(car(var)->stringValue());
 		}
 		ret = mPool->newLambda(std::move(variables), cdr(cdr(object)));
@@ -137,11 +137,11 @@ bool Context::evalSpecialForm(Object *object, Scope *scope, Object *&ret)
 		return true;
 	}
 	else if (name == "define-syntax") {
-		checkType(car(cdr(object)), Object::TypeAtom);
+		checkType(car(cdr(object)), Object::TypeSymbol);
 		std::string keyword = car(cdr(object))->stringValue();
 
 		Object *syntaxRules = car(cdr(cdr(object)));
-		checkType(car(syntaxRules), Object::TypeAtom);
+		checkType(car(syntaxRules), Object::TypeSymbol);
 		if (car(syntaxRules)->stringValue() != "syntax-rules") {
 			std::stringstream ss;
 			ss << "Invalid expression " << syntaxRules << " in define-syntax";
@@ -153,7 +153,7 @@ bool Context::evalSpecialForm(Object *object, Scope *scope, Object *&ret)
 		std::vector<std::string> literals;
 		for (Object *cons = lits; cons->type() == Object::TypeCons; cons = cdr(cons)) {
 			Object *lit = car(cons);
-			checkType(lit, Object::TypeAtom);
+			checkType(lit, Object::TypeSymbol);
 			literals.push_back(lit->stringValue());
 		}
 

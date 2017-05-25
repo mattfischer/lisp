@@ -30,7 +30,7 @@ Object *cdr(Object *object)
 
 bool Syntax::matchPattern(Object *object, Object *pattern, std::map<std::string, Object*> &matches, ObjectPool *pool)
 {
-	if (pattern->type() == Object::TypeAtom) {
+	if (pattern->type() == Object::TypeSymbol) {
 		const std::string &name = pattern->stringValue();
 		std::map<std::string, Object*>::iterator it = matches.find(name);
 		if (it == matches.end()) {
@@ -48,7 +48,7 @@ bool Syntax::matchPattern(Object *object, Object *pattern, std::map<std::string,
 	else if (pattern->type() == Object::TypeCons) {
 		for (; pattern->type() != Object::TypeNone && object->type() != Object::TypeNone;) {
 			bool ellipses = false;
-			if (cdr(pattern)->type() == Object::TypeCons && car(cdr(pattern))->type() == Object::TypeAtom && car(cdr(pattern))->stringValue() == "...") {
+			if (cdr(pattern)->type() == Object::TypeCons && car(cdr(pattern))->type() == Object::TypeSymbol && car(cdr(pattern))->stringValue() == "...") {
 				while (object->type() == Object::TypeCons && matchPattern(car(object), car(pattern), matches, pool)) {
 					object = cdr(object);
 				}
@@ -77,7 +77,7 @@ bool Syntax::applyTemplate(Object *templ, std::map<std::string, Object*> &matche
 	Object *prev = nil;
 	bool ret = false;
 
-	if (templ->type() == Object::TypeAtom) {
+	if (templ->type() == Object::TypeSymbol) {
 		const std::string &name = templ->stringValue();
 		std::map<std::string, Object*>::const_iterator it = matches.find(name);
 		if (it != matches.end()) {
@@ -95,7 +95,7 @@ bool Syntax::applyTemplate(Object *templ, std::map<std::string, Object*> &matche
 		ret = true;
 		for (Object *cons = templ; cons->type() == Object::TypeCons; cons = cdr(cons)) {
 			bool ellipses = false;
-			if (cdr(cons)->type() == Object::TypeCons && car(cdr(cons))->type() == Object::TypeAtom && car(cdr(cons))->stringValue() == "...") {
+			if (cdr(cons)->type() == Object::TypeCons && car(cdr(cons))->type() == Object::TypeSymbol && car(cdr(cons))->stringValue() == "...") {
 				ellipses = true;
 			}
 

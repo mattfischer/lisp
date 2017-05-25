@@ -29,10 +29,10 @@ Object *ObjectPool::newInt(int value)
 	return object;
 }
 
-Object *ObjectPool::newAtom(const std::string &value)
+Object *ObjectPool::newSymbol(const std::string &value)
 {
 	Object *object = newObject();
-	object->setAtom(value);
+	object->setSymbol(value);
 	
 	return object;
 }

@@ -11,7 +11,7 @@ public:
 	Object *newNone();
 	Object *newInt(int value);
 	Object *newBool(bool value);
-	Object *newAtom(const std::string &value);
+	Object *newSymbol(const std::string &value);
 	Object *newString(const std::string &value);
 	Object *newCons(Object *car, Object *cdr);
 	Object *newLambda(std::vector<std::string> &&variables, Object *body);

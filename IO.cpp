@@ -32,7 +32,7 @@ Object *IO::read(std::istream &i, ObjectPool *pool)
 
 	if (c == '\'') {
 		object = new Object();
-		Object *car = pool->newAtom("quote");
+		Object *car = pool->newSymbol("quote");
 		Object *cdr = pool->newCons(read(i, pool), pool->newNone());
 		object = pool->newCons(car, cdr);
 	}
@@ -103,7 +103,7 @@ Object *IO::read(std::istream &i, ObjectPool *pool)
 			object = pool->newBool(false);
 		}
 		else {
-			object = pool->newAtom(value);
+			object = pool->newSymbol(value);
 		}
 	}
 
@@ -134,7 +134,7 @@ void IO::print(std::ostream &o, const Object *object)
 		o << "\"" << object->stringValue() << "\"";
 		break;
 
-	case Object::TypeAtom:
+	case Object::TypeSymbol:
 		o << object->stringValue();
 		break;
 
@@ -180,8 +180,8 @@ std::ostream &operator<<(std::ostream &o, Object::Type type)
 		o << "string";
 		break;
 
-	case Object::TypeAtom:
-		o << "atom";
+	case Object::TypeSymbol:
+		o << "symbol";
 		break;
 
 	case Object::TypeCons:

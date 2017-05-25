@@ -30,9 +30,9 @@ void Object::setString(const std::string &value)
 	mData.stringValue = new std::string(value);
 }
 
-void Object::setAtom(const std::string &value)
+void Object::setSymbol(const std::string &value)
 {
-	mType = TypeAtom;
+	mType = TypeSymbol;
 	mData.stringValue = new std::string(value);
 }
 
@@ -94,7 +94,7 @@ void Object::dispose()
 {
 	switch (mType) {
 	case TypeString:
-	case TypeAtom:
+	case TypeSymbol:
 		delete mData.stringValue;
 		break;
 

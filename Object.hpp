@@ -13,7 +13,7 @@ public:
 		TypeBool,
 		TypeInt,
 		TypeString,
-		TypeAtom,
+		TypeSymbol,
 		TypeCons,
 		TypeLambda,
 		TypeNativeFunction
@@ -37,7 +37,7 @@ public:
 	void setBool(bool value);
 	void setInt(int value);
 	void setString(const std::string &value);
-	void setAtom(const std::string &value);
+	void setSymbol(const std::string &value);
 	void setCons(Object *car, Object *cdr);
 	void setLambda(std::vector<std::string> &&variables, Object *body);
 	void setNativeFunction(NativeFunction nativeFunction);
