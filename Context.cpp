@@ -118,7 +118,6 @@ bool Context::evalSpecialForm(Object *object, Scope *scope, Object *&ret)
 			Object *name = car(cons);
 			checkType(name, Object::TypeAtom);
 
-			checkType(cdr(cons), Object::TypeCons);
 			Object *value = car(cdr(cons));
 			ret = eval(value);
 
@@ -127,12 +126,10 @@ bool Context::evalSpecialForm(Object *object, Scope *scope, Object *&ret)
 		return true;
 	}
 	else if (name == "quote") {
-		checkType(cdr(object), Object::TypeCons);
 		ret = car(cdr(object));
 		return true;
 	}
 	else if (name == "lambda") {
-		checkType(cdr(object), Object::TypeCons);
 		Object *vars = car(cdr(object));
 
 		std::vector<std::string> variables;
@@ -146,13 +143,8 @@ bool Context::evalSpecialForm(Object *object, Scope *scope, Object *&ret)
 	}
 	else if (name == "if") {
 		Object *test = cdr(object);
-		checkType(test, Object::TypeCons);
-
 		Object *consequent = cdr(test);
-		checkType(consequent, Object::TypeCons);
-
 		Object *alternative = cdr(consequent);
-		checkType(alternative, Object::TypeCons);
 
 		if (eval(car(test), scope) != nil()) {
 			ret = eval(car(consequent));
@@ -163,13 +155,10 @@ bool Context::evalSpecialForm(Object *object, Scope *scope, Object *&ret)
 		return true;
 	}
 	else if (name == "define-syntax") {
-		checkType(cdr(object), Object::TypeCons);
 		checkType(car(cdr(object)), Object::TypeAtom);
 		std::string keyword = car(cdr(object))->stringValue();
 
-		checkType(cdr(cdr(object)), Object::TypeCons);
 		Object *syntaxRules = car(cdr(cdr(object)));
-		checkType(syntaxRules, Object::TypeCons);
 		checkType(car(syntaxRules), Object::TypeAtom);
 		if (car(syntaxRules)->stringValue() != "syntax-rules") {
 			std::stringstream ss;
@@ -189,13 +178,11 @@ bool Context::evalSpecialForm(Object *object, Scope *scope, Object *&ret)
 		std::vector<Syntax::Rule> rules;
 		for (Object *cons = cdr(cdr(syntaxRules)); cons->type() == Object::TypeCons; cons = cdr(cons)) {
 			Object *rule = car(cons);
-			checkType(rule, Object::TypeCons);
-
 			Object *pattern = car(rule);
 			checkType(pattern, Object::TypeCons);
 
-			checkType(cdr(rule), Object::TypeCons);
 			Object *templ = car(cdr(rule));
+			checkType(templ, Object::TypeCons);
 
 			Syntax::Rule newRule;
 			newRule.pattern = pattern;
@@ -246,7 +233,6 @@ Object *Context::evalLambda(Object *lambda, Object *args, Scope *scope)
 		if (arg == nil()) {
 			break;
 		}
-		checkType(arg, Object::Type::TypeCons);
 		vars[lambda->lambdaValue().variables[i]] = car(arg);
 		arg = cdr(arg);
 	}
@@ -267,10 +253,12 @@ Object *Context::evalLambda(Object *lambda, Object *args, Scope *scope)
 }
 Object *Context::car(Object *object)
 {
+	checkType(object, Object::TypeCons);
 	return object->consValue().car;
 }
 
 Object *Context::cdr(Object *object)
 {
+	checkType(object, Object::TypeCons);
 	return object->consValue().cdr;
 }
