@@ -6,15 +6,15 @@
 #include <sstream>
 #include <cstdarg>
 
-void getArgs(Object *object, int length, ...)
+void getArgs(Datum *datum, int length, ...)
 {
 	va_list ap;
 	va_start(ap, length);
-	int objectLength = 0;
-	for (Object *cons = object; cons->type() != Object::TypeNone; cons = cons->consValue().cdr) {
-		if (objectLength < length) {
-			Object::Type type = va_arg(ap, Object::Type);
-			Object **arg = va_arg(ap, Object**);
+	int datumLength = 0;
+	for (Datum *cons = datum; cons->type() != Datum::TypeNone; cons = cons->consValue().cdr) {
+		if (datumLength < length) {
+			Datum::Type type = va_arg(ap, Datum::Type);
+			Datum **arg = va_arg(ap, Datum**);
 			*arg = cons->consValue().car;
 			if ((*arg)->type() != type) {
 				std::stringstream ss;
@@ -22,59 +22,59 @@ void getArgs(Object *object, int length, ...)
 				throw Error(ss.str());
 			}
 		}
-		objectLength++;
+		datumLength++;
 	}
 
-	if (objectLength != length) {
+	if (datumLength != length) {
 		std::stringstream ss;
-		ss << "Argument list " << object << " is of incorrect length (expected " << length << " got " << objectLength << ")";
+		ss << "Argument list " << datum << " is of incorrect length (expected " << length << " got " << datumLength << ")";
 		throw Error(ss.str());
 	}
 }
 
-Object *add(Object *args, ObjectPool *pool)
+Datum *add(Datum *args, DatumPool *pool)
 {
-	Object *a, *b;
-	getArgs(args, 2, Object::TypeInt, &a, Object::TypeInt, &b);
+	Datum *a, *b;
+	getArgs(args, 2, Datum::TypeInt, &a, Datum::TypeInt, &b);
 
-	Object *ret = new Object();
+	Datum *ret = new Datum();
 	ret->setInt(a->intValue() + b->intValue());
 	return ret;
 }
 
-Object *subtract(Object *args, ObjectPool *pool)
+Datum *subtract(Datum *args, DatumPool *pool)
 {
-	Object *a, *b;
-	getArgs(args, 2, Object::TypeInt, &a, Object::TypeInt, &b);
+	Datum *a, *b;
+	getArgs(args, 2, Datum::TypeInt, &a, Datum::TypeInt, &b);
 
-	Object *ret = new Object();
+	Datum *ret = new Datum();
 	ret->setInt(a->intValue() - b->intValue());
 	return ret;
 }
 
-Object *multiply(Object *args, ObjectPool *pool)
+Datum *multiply(Datum *args, DatumPool *pool)
 {
-	Object *a, *b;
-	getArgs(args, 2, Object::TypeInt, &a, Object::TypeInt, &b);
+	Datum *a, *b;
+	getArgs(args, 2, Datum::TypeInt, &a, Datum::TypeInt, &b);
 
-	Object *ret = new Object();
+	Datum *ret = new Datum();
 	ret->setInt(a->intValue() * b->intValue());
 	return ret;
 }
 
-Object *divide(Object *args, ObjectPool *pool)
+Datum *divide(Datum *args, DatumPool *pool)
 {
-	Object *a, *b;
-	getArgs(args, 2, Object::TypeInt, &a, Object::TypeInt, &b);
+	Datum *a, *b;
+	getArgs(args, 2, Datum::TypeInt, &a, Datum::TypeInt, &b);
 
-	Object *ret = new Object();
+	Datum *ret = new Datum();
 	ret->setInt(a->intValue() / b->intValue());
 	return ret;
 }
 
-std::map<std::string, Object*> NativeFunctions::functions(ObjectPool *pool)
+std::map<std::string, Datum*> NativeFunctions::functions(DatumPool *pool)
 {
-	std::map<std::string, Object*> functions;
+	std::map<std::string, Datum*> functions;
 
 	functions["+"] = pool->newNativeFunction(add);
 	functions["-"] = pool->newNativeFunction(subtract);

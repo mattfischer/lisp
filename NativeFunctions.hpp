@@ -1,14 +1,14 @@
 #ifndef NATIVE_FUNCTIONS_HPP
 #define NATIVE_FUNCTIONS_HPP
 
-#include "Object.hpp"
-#include "ObjectPool.hpp"
+#include "Datum.hpp"
+#include "DatumPool.hpp"
 
 #include <map>
 #include <string>
 
 class NativeFunctions {
 public:
-	static std::map<std::string, Object*> functions(ObjectPool *pool);
+	static std::map<std::string, Datum*> functions(DatumPool *pool);
 };
 #endif

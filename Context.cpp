@@ -14,62 +14,62 @@ const char *syntaxes[] = {
 
 Context::Context()
 {
-	mPool = new ObjectPool;
+	mPool = new DatumPool;
 
-	std::map<std::string, Object*> functions = NativeFunctions::functions(mPool);
+	std::map<std::string, Datum*> functions = NativeFunctions::functions(mPool);
 
 	mRootScope = new Scope(0, std::move(functions));
 
 	for (const char *syntax : syntaxes) {
 		std::stringstream ss;
 		ss << syntax;
-		Object *object = IO::read(ss, mPool);
-		eval(object);
+		Datum *datum = IO::read(ss, mPool);
+		eval(datum);
 	}
 }
 
-Object *Context::eval(Object *object)
+Datum *Context::eval(Datum *datum)
 {
-	return eval(object, mRootScope);
+	return eval(datum, mRootScope);
 }
 
-ObjectPool *Context::pool()
+DatumPool *Context::pool()
 {
 	return mPool;
 }
 
-Object *Context::eval(Object *object, Scope *scope)
+Datum *Context::eval(Datum *datum, Scope *scope)
 {
-	switch (object->type()) {
-	case Object::TypeNone:
-	case Object::TypeInt:
-	case Object::TypeString:
-		return object;
+	switch (datum->type()) {
+	case Datum::TypeNone:
+	case Datum::TypeInt:
+	case Datum::TypeString:
+		return datum;
 
-	case Object::TypeSymbol:
-		return scope->get(object->stringValue());
+	case Datum::TypeSymbol:
+		return scope->get(datum->stringValue());
 
-	case Object::TypeCons:
+	case Datum::TypeCons:
 	{
-		Object *ret;
-		if (evalSpecialForm(object, scope, ret)) {
+		Datum *ret;
+		if (evalSpecialForm(datum, scope, ret)) {
 			return ret;
 		}
 
-		Object *evals = evalCons(object, scope);
+		Datum *evals = evalCons(datum, scope);
 
-		Object *function = car(evals);
-		Object *args = cdr(evals);
-		if (function->type() == Object::TypeLambda) {
+		Datum *function = car(evals);
+		Datum *args = cdr(evals);
+		if (function->type() == Datum::TypeLambda) {
 			return evalLambda(function, args, scope);
 		}
-		else if (function->type() == Object::TypeNativeFunction)
+		else if (function->type() == Datum::TypeNativeFunction)
 		{
 			return function->nativeFunctionValue()(args, mPool);
 		}
 		else {
 			std::stringstream ss;
-			ss << "Object " << function << " must be a valid function.";
+			ss << "Datum " << function << " must be a valid function.";
 			throw Error(ss.str());
 		}
 	}
@@ -79,28 +79,28 @@ Object *Context::eval(Object *object, Scope *scope)
 	}
 }
 
-void Context::checkType(Object *object, Object::Type type)
+void Context::checkType(Datum *datum, Datum::Type type)
 {
-	if (object->type() != type) {
+	if (datum->type() != type) {
 		std::stringstream ss;
-		ss << "Type mismatch on " << object << " (expected " << type << " got " << object->type() << ")";
+		ss << "Type mismatch on " << datum << " (expected " << type << " got " << datum->type() << ")";
 		throw Error(ss.str());
 	}
 }
 
-bool Context::evalSpecialForm(Object *object, Scope *scope, Object *&ret)
+bool Context::evalSpecialForm(Datum *datum, Scope *scope, Datum *&ret)
 {
-	const std::string &name = car(object)->stringValue();
+	const std::string &name = car(datum)->stringValue();
 
 	if (name == "set!" || name == "define") {
 		bool isDefine = (name == "define");
-		Object *cons = cdr(object);
+		Datum *cons = cdr(datum);
 		ret = mPool->newNone();
-		for (Object *cons = cdr(object); cons->type() == Object::TypeCons; cons = cdr(cdr(cons))) {
-			Object *name = car(cons);
-			checkType(name, Object::TypeSymbol);
+		for (Datum *cons = cdr(datum); cons->type() == Datum::TypeCons; cons = cdr(cdr(cons))) {
+			Datum *name = car(cons);
+			checkType(name, Datum::TypeSymbol);
 
-			Object *value = car(cdr(cons));
+			Datum *value = car(cdr(cons));
 			ret = eval(value);
 
 			scope->set(name->stringValue(), ret, isDefine);
@@ -108,27 +108,27 @@ bool Context::evalSpecialForm(Object *object, Scope *scope, Object *&ret)
 		return true;
 	}
 	else if (name == "quote") {
-		ret = car(cdr(object));
+		ret = car(cdr(datum));
 		return true;
 	}
 	else if (name == "lambda") {
-		Object *vars = car(cdr(object));
+		Datum *vars = car(cdr(datum));
 
 		std::vector<std::string> variables;
-		for (Object *var = vars; var->type() == Object::TypeCons; var = cdr(var)) {
-			checkType(car(var), Object::TypeSymbol);
+		for (Datum *var = vars; var->type() == Datum::TypeCons; var = cdr(var)) {
+			checkType(car(var), Datum::TypeSymbol);
 			variables.push_back(car(var)->stringValue());
 		}
-		ret = mPool->newLambda(std::move(variables), cdr(cdr(object)));
+		ret = mPool->newLambda(std::move(variables), cdr(cdr(datum)));
 		return true;
 	}
 	else if (name == "if") {
-		Object *test = cdr(object);
-		Object *consequent = cdr(test);
-		Object *alternative = cdr(consequent);
+		Datum *test = cdr(datum);
+		Datum *consequent = cdr(test);
+		Datum *alternative = cdr(consequent);
 
-		Object *result = eval(car(test));
-		if (result->type() != Object::TypeBool || result->boolValue()) {
+		Datum *result = eval(car(test));
+		if (result->type() != Datum::TypeBool || result->boolValue()) {
 			ret = eval(car(consequent));
 		}
 		else {
@@ -137,34 +137,34 @@ bool Context::evalSpecialForm(Object *object, Scope *scope, Object *&ret)
 		return true;
 	}
 	else if (name == "define-syntax") {
-		checkType(car(cdr(object)), Object::TypeSymbol);
-		std::string keyword = car(cdr(object))->stringValue();
+		checkType(car(cdr(datum)), Datum::TypeSymbol);
+		std::string keyword = car(cdr(datum))->stringValue();
 
-		Object *syntaxRules = car(cdr(cdr(object)));
-		checkType(car(syntaxRules), Object::TypeSymbol);
+		Datum *syntaxRules = car(cdr(cdr(datum)));
+		checkType(car(syntaxRules), Datum::TypeSymbol);
 		if (car(syntaxRules)->stringValue() != "syntax-rules") {
 			std::stringstream ss;
 			ss << "Invalid expression " << syntaxRules << " in define-syntax";
 			throw Error(ss.str());
 		}
 
-		checkType(cdr(syntaxRules), Object::TypeCons);
-		Object *lits = car(cdr(syntaxRules));
+		checkType(cdr(syntaxRules), Datum::TypeCons);
+		Datum *lits = car(cdr(syntaxRules));
 		std::vector<std::string> literals;
-		for (Object *cons = lits; cons->type() == Object::TypeCons; cons = cdr(cons)) {
-			Object *lit = car(cons);
-			checkType(lit, Object::TypeSymbol);
+		for (Datum *cons = lits; cons->type() == Datum::TypeCons; cons = cdr(cons)) {
+			Datum *lit = car(cons);
+			checkType(lit, Datum::TypeSymbol);
 			literals.push_back(lit->stringValue());
 		}
 
 		std::vector<Syntax::Rule> rules;
-		for (Object *cons = cdr(cdr(syntaxRules)); cons->type() == Object::TypeCons; cons = cdr(cons)) {
-			Object *rule = car(cons);
-			Object *pattern = car(rule);
-			checkType(pattern, Object::TypeCons);
+		for (Datum *cons = cdr(cdr(syntaxRules)); cons->type() == Datum::TypeCons; cons = cdr(cons)) {
+			Datum *rule = car(cons);
+			Datum *pattern = car(rule);
+			checkType(pattern, Datum::TypeCons);
 
-			Object *templ = car(cdr(rule));
-			checkType(templ, Object::TypeCons);
+			Datum *templ = car(cdr(rule));
+			checkType(templ, Datum::TypeCons);
 
 			Syntax::Rule newRule;
 			newRule.pattern = pattern;
@@ -178,7 +178,7 @@ bool Context::evalSpecialForm(Object *object, Scope *scope, Object *&ret)
 	}
 	else if (scope->containsSyntax(name)) {
 		Syntax *syntax = scope->getSyntax(name);
-		if (syntax->transform(object, ret, mPool)) {
+		if (syntax->transform(datum, ret, mPool)) {
 			ret = eval(ret, scope);
 			return true;
 		}
@@ -187,14 +187,14 @@ bool Context::evalSpecialForm(Object *object, Scope *scope, Object *&ret)
 	return false;
 }
 
-Object *Context::evalCons(Object *object, Scope *scope)
+Datum *Context::evalCons(Datum *datum, Scope *scope)
 {
-	Object *nil = mPool->newNone();
-	Object *ret = nil;
-	Object *prev = nil;
-	for (Object *cons = object; cons->type() == Object::TypeCons; cons = cdr(cons)) {
-		Object *item = eval(car(cons), scope);
-		Object *newCons = mPool->newCons(item, nil);
+	Datum *nil = mPool->newNone();
+	Datum *ret = nil;
+	Datum *prev = nil;
+	for (Datum *cons = datum; cons->type() == Datum::TypeCons; cons = cdr(cons)) {
+		Datum *item = eval(car(cons), scope);
+		Datum *newCons = mPool->newCons(item, nil);
 		if (prev == nil) {
 			ret = newCons;
 		}
@@ -207,40 +207,40 @@ Object *Context::evalCons(Object *object, Scope *scope)
 	return ret;
 }
 
-Object *Context::evalLambda(Object *lambda, Object *args, Scope *scope)
+Datum *Context::evalLambda(Datum *lambda, Datum *args, Scope *scope)
 {
-	std::map<std::string, Object*> vars;
-	Object *arg = args;
+	std::map<std::string, Datum*> vars;
+	Datum *arg = args;
 	for (int i = 0; i < lambda->lambdaValue().variables.size(); i++) {
-		if (arg->type() != Object::TypeCons) {
+		if (arg->type() != Datum::TypeCons) {
 			break;
 		}
 		vars[lambda->lambdaValue().variables[i]] = car(arg);
 		arg = cdr(arg);
 	}
 
-	if (arg->type() != Object::TypeNone || vars.size() < lambda->lambdaValue().variables.size()) {
+	if (arg->type() != Datum::TypeNone || vars.size() < lambda->lambdaValue().variables.size()) {
 		std::stringstream ss;
 		ss << "Incorrect number of arguments to function " << lambda << ": " << args;
 		throw Error(ss.str());
 	}
 
 	Scope *newScope = new Scope(scope, std::move(vars));
-	Object *ret = 0;
-	for (Object *cons = lambda->lambdaValue().body; cons->type() == Object::TypeCons; cons = cdr(cons)) {
+	Datum *ret = 0;
+	for (Datum *cons = lambda->lambdaValue().body; cons->type() == Datum::TypeCons; cons = cdr(cons)) {
 		ret = eval(car(cons), newScope);
 	}
 	return ret;
 
 }
-Object *Context::car(Object *object)
+Datum *Context::car(Datum *datum)
 {
-	checkType(object, Object::TypeCons);
-	return object->consValue().car;
+	checkType(datum, Datum::TypeCons);
+	return datum->consValue().car;
 }
 
-Object *Context::cdr(Object *object)
+Datum *Context::cdr(Datum *datum)
 {
-	checkType(object, Object::TypeCons);
-	return object->consValue().cdr;
+	checkType(datum, Datum::TypeCons);
+	return datum->consValue().cdr;
 }

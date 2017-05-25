@@ -1,8 +1,8 @@
 #ifndef SYNTAX_HPP
 #define SYNTAX_HPP
 
-#include "Object.hpp"
-#include "ObjectPool.hpp"
+#include "Datum.hpp"
+#include "DatumPool.hpp"
 
 #include <map>
 #include <string>
@@ -10,17 +10,17 @@
 class Syntax {
 public:
 	struct Rule {
-		Object *pattern;
-		Object *templ;
+		Datum *pattern;
+		Datum *templ;
 	};
 
 	Syntax(std::vector<Rule> &&rules);
 
-	bool transform(Object *object, Object *&ret, ObjectPool *pool);
+	bool transform(Datum *datum, Datum *&ret, DatumPool *pool);
 
 private:
-	bool matchPattern(Object *object, Object *pattern, std::map<std::string, Object*> &matches, ObjectPool *pool);
-	bool applyTemplate(Object *templ, std::map<std::string, Object*> &matches, ObjectPool *pool, Object *&result);
+	bool matchPattern(Datum *datum, Datum *pattern, std::map<std::string, Datum*> &matches, DatumPool *pool);
+	bool applyTemplate(Datum *templ, std::map<std::string, Datum*> &matches, DatumPool *pool, Datum *&result);
 
 	std::vector<Rule> mRules;
 };

@@ -5,11 +5,11 @@ Syntax::Syntax(std::vector<Rule> &&rules)
 {
 }
 
-bool Syntax::transform(Object *object, Object *&ret, ObjectPool *pool)
+bool Syntax::transform(Datum *datum, Datum *&ret, DatumPool *pool)
 {
 	for (const Rule &rule : mRules) {
-		std::map<std::string, Object*> matches;
-		if (matchPattern(object, rule.pattern, matches, pool)) {
+		std::map<std::string, Datum*> matches;
+		if (matchPattern(datum, rule.pattern, matches, pool)) {
 			applyTemplate(rule.templ, matches, pool, ret);
 			return true;
 		}
@@ -18,52 +18,52 @@ bool Syntax::transform(Object *object, Object *&ret, ObjectPool *pool)
 	return false;
 }
 
-Object *car(Object *object)
+Datum *car(Datum *datum)
 {
-	return object->consValue().car;
+	return datum->consValue().car;
 }
 
-Object *cdr(Object *object)
+Datum *cdr(Datum *datum)
 {
-	return object->consValue().cdr;
+	return datum->consValue().cdr;
 }
 
-bool Syntax::matchPattern(Object *object, Object *pattern, std::map<std::string, Object*> &matches, ObjectPool *pool)
+bool Syntax::matchPattern(Datum *datum, Datum *pattern, std::map<std::string, Datum*> &matches, DatumPool *pool)
 {
-	if (pattern->type() == Object::TypeSymbol) {
+	if (pattern->type() == Datum::TypeSymbol) {
 		const std::string &name = pattern->stringValue();
-		std::map<std::string, Object*>::iterator it = matches.find(name);
+		std::map<std::string, Datum*>::iterator it = matches.find(name);
 		if (it == matches.end()) {
-			matches[name] = pool->newCons(object, pool->newNone());
+			matches[name] = pool->newCons(datum, pool->newNone());
 		}
 		else {
-			Object *cons = matches[name];
-			while (cdr(cons)->type() == Object::TypeCons) {
+			Datum *cons = matches[name];
+			while (cdr(cons)->type() == Datum::TypeCons) {
 				cons = cdr(cons);
 			}
-			cons->setCons(car(cons), pool->newCons(object, cdr(cons)));
+			cons->setCons(car(cons), pool->newCons(datum, cdr(cons)));
 		}
 		return true;
 	}
-	else if (pattern->type() == Object::TypeCons) {
-		for (; pattern->type() != Object::TypeNone && object->type() != Object::TypeNone;) {
+	else if (pattern->type() == Datum::TypeCons) {
+		for (; pattern->type() != Datum::TypeNone && datum->type() != Datum::TypeNone;) {
 			bool ellipses = false;
-			if (cdr(pattern)->type() == Object::TypeCons && car(cdr(pattern))->type() == Object::TypeSymbol && car(cdr(pattern))->stringValue() == "...") {
-				while (object->type() == Object::TypeCons && matchPattern(car(object), car(pattern), matches, pool)) {
-					object = cdr(object);
+			if (cdr(pattern)->type() == Datum::TypeCons && car(cdr(pattern))->type() == Datum::TypeSymbol && car(cdr(pattern))->stringValue() == "...") {
+				while (datum->type() == Datum::TypeCons && matchPattern(car(datum), car(pattern), matches, pool)) {
+					datum = cdr(datum);
 				}
 				pattern = cdr(cdr(pattern));
 			}
 			else {
-				if (!matchPattern(car(object), car(pattern), matches, pool)) {
+				if (!matchPattern(car(datum), car(pattern), matches, pool)) {
 					return false;
 				}
 				pattern = cdr(pattern);
-				object = cdr(object);
+				datum = cdr(datum);
 			}
 		}
 
-		if (pattern->type() == Object::TypeNone && object->type() == Object::TypeNone) {
+		if (pattern->type() == Datum::TypeNone && datum->type() == Datum::TypeNone) {
 			return true;
 		}
 	}
@@ -71,43 +71,43 @@ bool Syntax::matchPattern(Object *object, Object *pattern, std::map<std::string,
 	return false;
 }
 
-bool Syntax::applyTemplate(Object *templ, std::map<std::string, Object*> &matches, ObjectPool *pool, Object *&result)
+bool Syntax::applyTemplate(Datum *templ, std::map<std::string, Datum*> &matches, DatumPool *pool, Datum *&result)
 {
-	Object *nil = pool->newNone();
-	Object *prev = nil;
+	Datum *nil = pool->newNone();
+	Datum *prev = nil;
 	bool ret = false;
 
-	if (templ->type() == Object::TypeSymbol) {
+	if (templ->type() == Datum::TypeSymbol) {
 		const std::string &name = templ->stringValue();
-		std::map<std::string, Object*>::const_iterator it = matches.find(name);
+		std::map<std::string, Datum*>::const_iterator it = matches.find(name);
 		if (it != matches.end()) {
-			Object *cons = it->second;
+			Datum *cons = it->second;
 			result = car(cons);
 			matches[name] = cdr(cons);
-			ret = (matches[name]->type() == Object::TypeCons);
+			ret = (matches[name]->type() == Datum::TypeCons);
 		}
 		else {
 			result = templ;
 			ret = false;
 		}
 	}
-	else if (templ->type() == Object::TypeCons) {
+	else if (templ->type() == Datum::TypeCons) {
 		ret = true;
-		for (Object *cons = templ; cons->type() == Object::TypeCons; cons = cdr(cons)) {
+		for (Datum *cons = templ; cons->type() == Datum::TypeCons; cons = cdr(cons)) {
 			bool ellipses = false;
-			if (cdr(cons)->type() == Object::TypeCons && car(cdr(cons))->type() == Object::TypeSymbol && car(cdr(cons))->stringValue() == "...") {
+			if (cdr(cons)->type() == Datum::TypeCons && car(cdr(cons))->type() == Datum::TypeSymbol && car(cdr(cons))->stringValue() == "...") {
 				ellipses = true;
 			}
 
 			bool canRepeat = false;
 			do {
-				Object *item;
+				Datum *item;
 				canRepeat = applyTemplate(car(cons), matches, pool, item);
 				if (!canRepeat) {
 					ret = false;
 				}
 
-				Object *newCons = pool->newCons(item, nil);
+				Datum *newCons = pool->newCons(item, nil);
 				if (prev == nil) {
 					result = newCons;
 				}

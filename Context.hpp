@@ -1,31 +1,31 @@
 #ifndef CONTEXT_HPP
 #define CONTEXT_HPP
 
-#include "Object.hpp"
+#include "Datum.hpp"
 #include "Scope.hpp"
-#include "ObjectPool.hpp"
+#include "DatumPool.hpp"
 
 class Context {
 public:
 	Context();
 
-	Object *eval(Object *object);
+	Datum *eval(Datum *datum);
 
-	ObjectPool *pool();
+	DatumPool *pool();
 
 private:
-	Object *eval(Object *object, Scope *scope);
-	Object *evalCons(Object *object, Scope *scope);
-	bool evalSpecialForm(Object *object, Scope *scope, Object *&ret);
-	Object *evalLambda(Object *lambda, Object *args, Scope *scope);
+	Datum *eval(Datum *datum, Scope *scope);
+	Datum *evalCons(Datum *datum, Scope *scope);
+	bool evalSpecialForm(Datum *datum, Scope *scope, Datum *&ret);
+	Datum *evalLambda(Datum *lambda, Datum *args, Scope *scope);
 
-	void checkType(Object *object, Object::Type type);
+	void checkType(Datum *datum, Datum::Type type);
 
-	Object *car(Object *object);
-	Object *cdr(Object *object);
+	Datum *car(Datum *datum);
+	Datum *cdr(Datum *datum);
 
 	Scope *mRootScope;
-	ObjectPool *mPool;
+	DatumPool *mPool;
 };
 
 #endif

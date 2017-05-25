@@ -1,19 +1,19 @@
 #ifndef IO_HPP
 #define IO_HPP
 
-#include "Object.hpp"
-#include "ObjectPool.hpp"
+#include "Datum.hpp"
+#include "DatumPool.hpp"
 
 #include <istream>
 #include <ostream>
 
 class IO {
 public:
-	static Object *read(std::istream &i, ObjectPool *pool);
-	static void print(std::ostream &o, const Object *object);
+	static Datum *read(std::istream &i, DatumPool *pool);
+	static void print(std::ostream &o, const Datum *datum);
 };
 
-std::ostream &operator<<(std::ostream &o, const Object *object);
-std::ostream &operator<<(std::ostream &o, Object::Type type);
+std::ostream &operator<<(std::ostream &o, const Datum *datum);
+std::ostream &operator<<(std::ostream &o, Datum::Type type);
 
 #endif

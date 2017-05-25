@@ -1,49 +1,49 @@
-#include "Object.hpp"
+#include "Datum.hpp"
 
 #include <string.h>
 
-Object::Type Object::type() const
+Datum::Type Datum::type() const
 {
 	return mType;
 }
 
-void Object::setNone()
+void Datum::setNone()
 {
 	mType = TypeNone;
 }
 
-void Object::setBool(bool value)
+void Datum::setBool(bool value)
 {
 	mType = TypeBool;
 	mData.boolValue = value;
 }
 
-void Object::setInt(int value)
+void Datum::setInt(int value)
 {
 	mType = TypeInt;
 	mData.intValue = value;
 }
 
-void Object::setString(const std::string &value)
+void Datum::setString(const std::string &value)
 {
 	mType = TypeString;
 	mData.stringValue = new std::string(value);
 }
 
-void Object::setSymbol(const std::string &value)
+void Datum::setSymbol(const std::string &value)
 {
 	mType = TypeSymbol;
 	mData.stringValue = new std::string(value);
 }
 
-void Object::setCons(Object *car, Object *cdr)
+void Datum::setCons(Datum *car, Datum *cdr)
 {
 	mType = TypeCons;
 	mData.consValue.car = car;
 	mData.consValue.cdr = cdr;
 }
 
-void Object::setLambda(std::vector<std::string> &&variables, Object *body)
+void Datum::setLambda(std::vector<std::string> &&variables, Datum *body)
 {
 	mType = TypeLambda;
 	
@@ -54,43 +54,43 @@ void Object::setLambda(std::vector<std::string> &&variables, Object *body)
 	mData.lambdaValue = lambda;
 }
 
-void Object::setNativeFunction(NativeFunction nativeFunction)
+void Datum::setNativeFunction(NativeFunction nativeFunction)
 {
 	mType = TypeNativeFunction;
 	mData.nativeFunctionValue = nativeFunction;
 }
 
-int Object::intValue() const
+int Datum::intValue() const
 {
 	return mData.intValue;
 }
 
-bool Object::boolValue() const
+bool Datum::boolValue() const
 {
 	return mData.boolValue;
 }
 
-const std::string &Object::stringValue() const
+const std::string &Datum::stringValue() const
 {
 	return *mData.stringValue;
 }
 
-const Object::Cons &Object::consValue() const
+const Datum::Cons &Datum::consValue() const
 {
 	return mData.consValue;
 }
 
-const Object::Lambda &Object::lambdaValue() const
+const Datum::Lambda &Datum::lambdaValue() const
 {
 	return *mData.lambdaValue;
 }
 
-Object::NativeFunction Object::nativeFunctionValue() const
+Datum::NativeFunction Datum::nativeFunctionValue() const
 {
 	return mData.nativeFunctionValue;
 }
 
-void Object::dispose()
+void Datum::dispose()
 {
 	switch (mType) {
 	case TypeString:

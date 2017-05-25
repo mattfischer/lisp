@@ -1,5 +1,5 @@
 #include "Context.hpp"
-#include "Object.hpp"
+#include "Datum.hpp"
 #include "Error.hpp"
 #include "IO.hpp"
 
@@ -40,14 +40,14 @@ int test(const std::string &filename)
 
 		Context context;
 		std::stringstream ss(input);
-		Object *object = IO::read(ss, context.pool());
+		Datum *datum = IO::read(ss, context.pool());
 
 		std::string gotEval;
 		std::string gotError;
 		try {
-			object = context.eval(object);
+			datum = context.eval(datum);
 			std::stringstream oss;
-			oss << object;
+			oss << datum;
 			gotEval = oss.str();
 		}
 		catch (Error e) {
@@ -82,7 +82,7 @@ int test(const std::string &filename)
 
 int repl()
 {
-	Object *obj;
+	Datum *obj;
 	Context context;
 
 	do {
@@ -95,7 +95,7 @@ int repl()
 			std::cerr << "Error: " << error.message() << std::endl;
 			return 1;
 		}
-	} while (obj->type() != Object::TypeNone);
+	} while (obj->type() != Datum::TypeNone);
 
 	return 0;
 }

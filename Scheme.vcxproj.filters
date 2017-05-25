@@ -10,9 +10,6 @@
     <ClCompile Include="Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Object.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Error.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -31,14 +28,14 @@
     <ClCompile Include="Syntax.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ObjectPool.cpp">
+    <ClCompile Include="Datum.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DatumPool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Object.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="Error.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -57,7 +54,10 @@
     <ClInclude Include="Syntax.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="ObjectPool.hpp">
+    <ClInclude Include="Datum.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DatumPool.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

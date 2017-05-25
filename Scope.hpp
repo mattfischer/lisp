@@ -1,17 +1,17 @@
 #ifndef SCOPE_HPP
 #define SCOPE_HPP
 
-#include "Object.hpp"
+#include "Datum.hpp"
 #include "Syntax.hpp"
 
 #include <map>
 
 class Scope {
 public:
-	Scope(Scope *parent, std::map<std::string, Object*> &&variables);
+	Scope(Scope *parent, std::map<std::string, Datum*> &&variables);
 
-	Object *get(const std::string &name);
-	void set(const std::string &name, Object *value, bool create);
+	Datum *get(const std::string &name);
+	void set(const std::string &name, Datum *value, bool create);
 	bool contains(const std::string &name);
 
 	Syntax *getSyntax(const std::string &name);
@@ -20,7 +20,7 @@ public:
 
 private:
 	Scope *mParent;
-	std::map<std::string, Object*> mVariables;
+	std::map<std::string, Datum*> mVariables;
 	std::map<std::string, Syntax*> mSyntaxes;
 };
 #endif

@@ -1,12 +1,12 @@
-#ifndef OBJECT_HPP
-#define OBJECT_HPP
+#ifndef DATUM_HPP
+#define DATUM_HPP
 
 #include <string>
 #include <vector>
 
-class ObjectPool;
+class DatumPool;
 
-class Object {
+class Datum {
 public:
 	enum Type {
 		TypeNone,
@@ -20,16 +20,16 @@ public:
 	};
 
 	struct Cons {
-		Object *car;
-		Object *cdr;
+		Datum *car;
+		Datum *cdr;
 	};
 
 	struct Lambda {
 		std::vector<std::string> variables;
-		Object *body;
+		Datum *body;
 	};
 
-	typedef Object *(*NativeFunction)(Object*, ObjectPool*);
+	typedef Datum *(*NativeFunction)(Datum*, DatumPool*);
 
 	Type type() const;
 
@@ -38,8 +38,8 @@ public:
 	void setInt(int value);
 	void setString(const std::string &value);
 	void setSymbol(const std::string &value);
-	void setCons(Object *car, Object *cdr);
-	void setLambda(std::vector<std::string> &&variables, Object *body);
+	void setCons(Datum *car, Datum *cdr);
+	void setLambda(std::vector<std::string> &&variables, Datum *body);
 	void setNativeFunction(NativeFunction nativeFunction);
 
 	int intValue() const;

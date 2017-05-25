@@ -4,14 +4,14 @@
 
 #include <sstream>
 
-Scope::Scope(Scope *parent, std::map<std::string, Object*> &&variables)
+Scope::Scope(Scope *parent, std::map<std::string, Datum*> &&variables)
 	: mParent(parent), mVariables(std::move(variables))
 {
 }
 
-Object *Scope::get(const std::string &name)
+Datum *Scope::get(const std::string &name)
 {
-	std::map<std::string, Object*>::iterator it = mVariables.find(name);
+	std::map<std::string, Datum*>::iterator it = mVariables.find(name);
 	if (it == mVariables.end()) {
 		if (mParent) {
 			return mParent->get(name);
@@ -27,9 +27,9 @@ Object *Scope::get(const std::string &name)
 	}
 }
 
-void Scope::set(const std::string &name, Object *value, bool create)
+void Scope::set(const std::string &name, Datum *value, bool create)
 {
-	std::map<std::string, Object*>::iterator it = mVariables.find(name);
+	std::map<std::string, Datum*>::iterator it = mVariables.find(name);
 	if (it == mVariables.end()) {
 		if (create) {
 			mVariables[name] = value;

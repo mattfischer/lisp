@@ -18,9 +18,9 @@ static void eatWhitespace(std::istream &i)
 	}
 }
 
-Object *IO::read(std::istream &i, ObjectPool *pool)
+Datum *IO::read(std::istream &i, DatumPool *pool)
 {
-	Object *object;
+	Datum *datum;
 
 	eatWhitespace(i);
 
@@ -31,16 +31,16 @@ Object *IO::read(std::istream &i, ObjectPool *pool)
 	char c = i.get();
 
 	if (c == '\'') {
-		object = new Object();
-		Object *car = pool->newSymbol("quote");
-		Object *cdr = pool->newCons(read(i, pool), pool->newNone());
-		object = pool->newCons(car, cdr);
+		datum = new Datum();
+		Datum *car = pool->newSymbol("quote");
+		Datum *cdr = pool->newCons(read(i, pool), pool->newNone());
+		datum = pool->newCons(car, cdr);
 	}
 	else if (std::isdigit(c)) {
 		int value;
 		i.unget();
 		i >> value;
-		object = pool->newInt(value);
+		datum = pool->newInt(value);
 	}
 	else if (c == '\"')
 	{
@@ -52,15 +52,15 @@ Object *IO::read(std::istream &i, ObjectPool *pool)
 			}
 			value.push_back(c);
 		}
-		object = pool->newString(value.c_str());
+		datum = pool->newString(value.c_str());
 	}
 	else if (c == '(' || c == '[')
 	{
 		char end = (c == '(') ? ')' : ']';
 
-		Object *nil = pool->newNone();
-		Object *prev = nil;
-		object = nil;
+		Datum *nil = pool->newNone();
+		Datum *prev = nil;
+		datum = nil;
 		while (true) {
 			eatWhitespace(i);
 			c = i.get();
@@ -73,10 +73,10 @@ Object *IO::read(std::istream &i, ObjectPool *pool)
 				throw Error(ss.str());
 			}
 			i.unget();
-			Object *item = read(i, pool);
-			Object *newCons = pool->newCons(item, nil);
+			Datum *item = read(i, pool);
+			Datum *newCons = pool->newCons(item, nil);
 			if (prev == nil) {
-				object = newCons;
+				datum = newCons;
 			}
 			else {
 				prev->setCons(prev->consValue().car, newCons);
@@ -97,28 +97,28 @@ Object *IO::read(std::istream &i, ObjectPool *pool)
 		}
 
 		if (value == "#t") {
-			object = pool->newBool(true);
+			datum = pool->newBool(true);
 		}
 		else if (value == "#f") {
-			object = pool->newBool(false);
+			datum = pool->newBool(false);
 		}
 		else {
-			object = pool->newSymbol(value);
+			datum = pool->newSymbol(value);
 		}
 	}
 
-	return object;
+	return datum;
 }
 
-void IO::print(std::ostream &o, const Object *object)
+void IO::print(std::ostream &o, const Datum *datum)
 {
-	switch (object->type()) {
-	case Object::TypeNone:
+	switch (datum->type()) {
+	case Datum::TypeNone:
 		o << "()";
 		break;
 
-	case Object::TypeBool:
-		if (object->boolValue()) {
+	case Datum::TypeBool:
+		if (datum->boolValue()) {
 			o << "#t";
 		}
 		else {
@@ -126,26 +126,26 @@ void IO::print(std::ostream &o, const Object *object)
 		}
 		break;
 
-	case Object::TypeInt:
-		o << object->intValue();
+	case Datum::TypeInt:
+		o << datum->intValue();
 		break;
 
-	case Object::TypeString:
-		o << "\"" << object->stringValue() << "\"";
+	case Datum::TypeString:
+		o << "\"" << datum->stringValue() << "\"";
 		break;
 
-	case Object::TypeSymbol:
-		o << object->stringValue();
+	case Datum::TypeSymbol:
+		o << datum->stringValue();
 		break;
 
-	case Object::TypeCons:
+	case Datum::TypeCons:
 	{
-		const Object *cons = object;
+		const Datum *cons = datum;
 		o << "(";
-		while (cons->type() != Object::TypeNone) {
+		while (cons->type() != Datum::TypeNone) {
 			print(o, cons->consValue().car);
 			cons = cons->consValue().cdr;
-			if (cons->type() != Object::TypeNone) {
+			if (cons->type() != Datum::TypeNone) {
 				o << " ";
 			}
 		}
@@ -155,36 +155,36 @@ void IO::print(std::ostream &o, const Object *object)
 	}
 }
 
-std::ostream &operator<<(std::ostream &o, const Object *object)
+std::ostream &operator<<(std::ostream &o, const Datum *datum)
 {
-	IO::print(o, object);
+	IO::print(o, datum);
 	return o;
 }
 
-std::ostream &operator<<(std::ostream &o, Object::Type type)
+std::ostream &operator<<(std::ostream &o, Datum::Type type)
 {
 	switch (type) {
-	case Object::TypeNone:
+	case Datum::TypeNone:
 		o << "nil";
 		break;
 
-	case Object::TypeBool:
+	case Datum::TypeBool:
 		o << "bool";
 		break;
 
-	case Object::TypeInt:
+	case Datum::TypeInt:
 		o << "int";
 		break;
 
-	case Object::TypeString:
+	case Datum::TypeString:
 		o << "string";
 		break;
 
-	case Object::TypeSymbol:
+	case Datum::TypeSymbol:
 		o << "symbol";
 		break;
 
-	case Object::TypeCons:
+	case Datum::TypeCons:
 		o << "cons";
 		break;
 	}
