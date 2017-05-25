@@ -8,8 +8,8 @@
 #include <sstream>
 
 const char *syntaxes[] = {
-	"(define-syntax begin (syntax-rules () ((_ x ...) ((lambda () x ...)))))",
-	"(define-syntax let (syntax-rules () ((_ ((x y) ...) z ...) ((lambda (x ...) z ...) y ...))))"
+	"(define-syntax begin (syntax-rules () [(_ x ...) ((lambda () x ...))] ))",
+	"(define-syntax let (syntax-rules () [(_ ((x y) ...) z ...) ((lambda (x ...) z ...) y ...)] ))"
 };
 
 Context::Context()

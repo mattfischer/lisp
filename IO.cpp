@@ -1,6 +1,9 @@
 #include "IO.hpp"
 
+#include "Error.hpp"
+
 #include <cctype>
+#include <sstream>
 
 static void eatWhitespace(std::istream &i)
 {
@@ -55,15 +58,22 @@ Object *IO::read(std::istream &i, Context *context)
 		object = new Object();
 		object->setString(value.c_str());
 	}
-	else if (c == '(')
+	else if (c == '(' || c == '[')
 	{
+		char end = (c == '(') ? ')' : ']';
+
 		Object *prev = context->nil();
 		object = context->nil();
 		while (true) {
 			eatWhitespace(i);
 			c = i.get();
-			if (c == ')') {
+			if (c == end) {
 				break;
+			}
+			else if (c == ')' || c == ']') {
+				std::stringstream ss;
+				ss << "Invalid character '" << c << "' in input";
+				throw Error(ss.str());
 			}
 			i.unget();
 			Object *item = read(i, context);
