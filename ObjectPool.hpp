@@ -16,6 +16,5 @@ public:
 	Object *newCons(Object *car, Object *cdr);
 	Object *newLambda(std::vector<std::string> &&variables, Object *body);
 	Object *newNativeFunction(Object::NativeFunction nativeFunction);
-	Object *newEllipses();
 };
 #endif

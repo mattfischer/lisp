@@ -25,7 +25,7 @@ Object *IO::read(std::istream &i, ObjectPool *pool)
 	eatWhitespace(i);
 
 	if (i.fail() || i.eof()) {
-		return object;
+		return pool->newNone();
 	}
 
 	char c = i.get();
@@ -101,9 +101,6 @@ Object *IO::read(std::istream &i, ObjectPool *pool)
 		}
 		else if (value == "#f") {
 			object = pool->newBool(false);
-		}
-		else if (value == "...") {
-			object = pool->newEllipses();
 		}
 		else {
 			object = pool->newAtom(value);

@@ -68,11 +68,3 @@ Object *ObjectPool::newNativeFunction(Object::NativeFunction nativeFunction)
 	
 	return object;
 }
-
-Object *ObjectPool::newEllipses()
-{
-	Object *object = newObject();
-	object->setEllipses();
-
-	return object;
-}

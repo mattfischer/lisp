@@ -16,8 +16,7 @@ public:
 		TypeAtom,
 		TypeCons,
 		TypeLambda,
-		TypeNativeFunction,
-		TypeEllipses
+		TypeNativeFunction
 	};
 
 	struct Cons {
@@ -42,7 +41,6 @@ public:
 	void setCons(Object *car, Object *cdr);
 	void setLambda(std::vector<std::string> &&variables, Object *body);
 	void setNativeFunction(NativeFunction nativeFunction);
-	void setEllipses();
 
 	int intValue() const;
 	bool boolValue() const;
