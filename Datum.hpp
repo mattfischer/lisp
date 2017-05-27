@@ -9,6 +9,7 @@ class DatumPool;
 class Datum {
 public:
 	enum Type {
+		TypeAny,
 		TypeNone,
 		TypeBool,
 		TypeInt,

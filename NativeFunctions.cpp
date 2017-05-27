@@ -16,7 +16,7 @@ void getArgs(Datum *datum, int length, ...)
 			Datum::Type type = va_arg(ap, Datum::Type);
 			Datum **arg = va_arg(ap, Datum**);
 			*arg = cons->consValue().car;
-			if ((*arg)->type() != type) {
+			if (type != Datum::TypeAny && (*arg)->type() != type) {
 				std::stringstream ss;
 				ss << "Type mismatch on " << *arg << " (expected " << type << " got " << (*arg)->type() << ")";
 				throw Error(ss.str());
@@ -72,6 +72,50 @@ Datum *divide(Datum *args, DatumPool *pool)
 	return ret;
 }
 
+Datum *eq(Datum *args, DatumPool *pool)
+{
+	Datum *a, *b;
+	getArgs(args, 2, Datum::TypeAny, &a, Datum::TypeAny, &b);
+
+	if (a->type() != b->type()) {
+		return pool->newBool(false);
+	}
+
+	switch (a->type()) {
+	case Datum::TypeBool:
+		if (a->boolValue() != b->boolValue()) {
+			return pool->newBool(false);
+		}
+		break;
+
+	case Datum::TypeInt:
+		if (a->intValue() != b->intValue()) {
+			return pool->newBool(false);
+		}
+		break;
+
+	case Datum::TypeSymbol:
+	case Datum::TypeString:
+		if (a->stringValue() != b->stringValue()) {
+			return pool->newBool(false);
+		}
+		break;
+
+	case Datum::TypeCons:
+	case Datum::TypeLambda:
+	case Datum::TypeNativeFunction:
+		if (a != b) {
+			return pool->newBool(false);
+		}
+		break;
+
+	default:
+		break;
+	}
+
+	return pool->newBool(true);
+}
+
 std::map<std::string, Datum*> NativeFunctions::functions(DatumPool *pool)
 {
 	std::map<std::string, Datum*> functions;
@@ -80,6 +124,7 @@ std::map<std::string, Datum*> NativeFunctions::functions(DatumPool *pool)
 	functions["-"] = pool->newNativeFunction(subtract);
 	functions["*"] = pool->newNativeFunction(multiply);
 	functions["/"] = pool->newNativeFunction(divide);
+	functions["eq?"] = pool->newNativeFunction(eq);
 
 	return functions;
 }
