@@ -114,6 +114,7 @@ bool Context::evalSpecialForm(Datum *datum, Scope *scope, Datum *&ret, Continuat
 			Datum *name = car(cons);
 			checkType(name, Datum::TypeSymbol);
 
+			continuation.frames()[frame].next = cons;
 			Datum *value = car(cdr(cons));
 			ret = evalDatum(value, scope, continuation, frame + 1);
 
@@ -143,9 +144,11 @@ bool Context::evalSpecialForm(Datum *datum, Scope *scope, Datum *&ret, Continuat
 
 		Datum *result = evalDatum(car(test), scope, continuation, frame + 1);
 		if (result->type() != Datum::TypeBool || result->boolValue()) {
+			continuation.frames()[frame].next = car(consequent);
 			ret = evalDatum(car(consequent), scope, continuation, frame + 1);
 		}
 		else {
+			continuation.frames()[frame].next = car(alternative);
 			ret = evalDatum(car(alternative), scope, continuation, frame + 1);
 		}
 		return true;
@@ -193,6 +196,7 @@ bool Context::evalSpecialForm(Datum *datum, Scope *scope, Datum *&ret, Continuat
 	else if (scope->containsSyntax(name)) {
 		Syntax *syntax = scope->getSyntax(name);
 		if (syntax->transform(datum, ret, mPool)) {
+			continuation.frames()[frame].next = ret;
 			ret = evalDatum(ret, scope, continuation, frame + 1);
 			return true;
 		}
@@ -203,20 +207,28 @@ bool Context::evalSpecialForm(Datum *datum, Scope *scope, Datum *&ret, Continuat
 
 Datum *Context::evalCons(Datum *datum, Scope *scope, Continuation &continuation, int frame)
 {
+	if (frame == continuation.frames().size()) {
+		continuation.addFrame(Continuation::Frame());
+	}
+
 	Datum *nil = mPool->newNone();
 	Datum *ret = nil;
 	Datum *prev = nil;
 	for (Datum *cons = datum; cons->type() == Datum::TypeCons; cons = cdr(cons)) {
+		continuation.frames()[frame].next = cons;
 		Datum *item = evalDatum(car(cons), scope, continuation, frame + 1);
 		Datum *newCons = mPool->newCons(item, nil);
 		if (prev == nil) {
 			ret = newCons;
+			continuation.frames()[frame].current = ret;
 		}
 		else {
 			prev->setCons(car(prev), newCons);
 		}
 		prev = newCons;
 	}
+
+	continuation.popFrame();
 
 	return ret;
 }
@@ -242,6 +254,7 @@ Datum *Context::evalLambda(Datum *lambda, Datum *args, Scope *scope, Continuatio
 	Scope *newScope = new Scope(scope, std::move(vars));
 	Datum *ret = 0;
 	for (Datum *cons = lambda->lambdaValue().body; cons->type() == Datum::TypeCons; cons = cdr(cons)) {
+		continuation.frames()[frame].next = cons;
 		ret = evalDatum(car(cons), newScope, continuation, frame + 1);
 	}
 	return ret;
