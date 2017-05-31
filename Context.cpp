@@ -30,7 +30,8 @@ Context::Context()
 
 Datum *Context::eval(Datum *datum)
 {
-	return eval(datum, mRootScope);
+	Continuation continuation;
+	return evalDatum(datum, mRootScope, continuation, 0);
 }
 
 DatumPool *Context::pool()
@@ -38,45 +39,58 @@ DatumPool *Context::pool()
 	return mPool;
 }
 
-Datum *Context::eval(Datum *datum, Scope *scope)
+Datum *Context::evalDatum(Datum *datum, Scope *scope, Continuation &continuation, int frame)
 {
+	if (frame == continuation.frames().size()) {
+		continuation.addFrame(Continuation::Frame());
+	}
+
+	Datum *ret;
+
 	switch (datum->type()) {
 	case Datum::TypeNone:
 	case Datum::TypeInt:
 	case Datum::TypeString:
-		return datum;
+		ret = datum;
+		break;
 
 	case Datum::TypeSymbol:
-		return scope->get(datum->stringValue());
+		ret = scope->get(datum->stringValue());
+		break;
 
 	case Datum::TypeCons:
 	{
-		Datum *ret;
-		if (evalSpecialForm(datum, scope, ret)) {
-			return ret;
+		if (evalSpecialForm(datum, scope, ret, continuation, frame)) {
+			break;
 		}
 
-		Datum *evals = evalCons(datum, scope);
+		Datum *evals = evalCons(datum, scope, continuation, frame);
 
 		Datum *function = car(evals);
 		Datum *args = cdr(evals);
 		if (function->type() == Datum::TypeLambda) {
-			return evalLambda(function, args, scope);
+			ret = evalLambda(function, args, scope, continuation, frame);
 		}
 		else if (function->type() == Datum::TypeNativeFunction)
 		{
-			return function->nativeFunctionValue()(args, mPool);
+			ret = function->nativeFunctionValue()(args, mPool);
 		}
 		else {
 			std::stringstream ss;
 			ss << "Datum " << function << " must be a valid function.";
 			throw Error(ss.str());
 		}
+		break;
 	}
 
 	default:
-		return mPool->newNone();
+		ret = mPool->newNone();
+		break;
 	}
+
+	continuation.popFrame();
+
+	return ret;
 }
 
 void Context::checkType(Datum *datum, Datum::Type type)
@@ -88,7 +102,7 @@ void Context::checkType(Datum *datum, Datum::Type type)
 	}
 }
 
-bool Context::evalSpecialForm(Datum *datum, Scope *scope, Datum *&ret)
+bool Context::evalSpecialForm(Datum *datum, Scope *scope, Datum *&ret, Continuation &continuation, int frame)
 {
 	const std::string &name = car(datum)->stringValue();
 
@@ -101,7 +115,7 @@ bool Context::evalSpecialForm(Datum *datum, Scope *scope, Datum *&ret)
 			checkType(name, Datum::TypeSymbol);
 
 			Datum *value = car(cdr(cons));
-			ret = eval(value);
+			ret = evalDatum(value, scope, continuation, frame + 1);
 
 			scope->set(name->stringValue(), ret, isDefine);
 		}
@@ -127,12 +141,12 @@ bool Context::evalSpecialForm(Datum *datum, Scope *scope, Datum *&ret)
 		Datum *consequent = cdr(test);
 		Datum *alternative = cdr(consequent);
 
-		Datum *result = eval(car(test));
+		Datum *result = evalDatum(car(test), scope, continuation, frame + 1);
 		if (result->type() != Datum::TypeBool || result->boolValue()) {
-			ret = eval(car(consequent));
+			ret = evalDatum(car(consequent), scope, continuation, frame + 1);
 		}
 		else {
-			ret = eval(car(alternative));
+			ret = evalDatum(car(alternative), scope, continuation, frame + 1);
 		}
 		return true;
 	}
@@ -179,7 +193,7 @@ bool Context::evalSpecialForm(Datum *datum, Scope *scope, Datum *&ret)
 	else if (scope->containsSyntax(name)) {
 		Syntax *syntax = scope->getSyntax(name);
 		if (syntax->transform(datum, ret, mPool)) {
-			ret = eval(ret, scope);
+			ret = evalDatum(ret, scope, continuation, frame + 1);
 			return true;
 		}
 	}
@@ -187,13 +201,13 @@ bool Context::evalSpecialForm(Datum *datum, Scope *scope, Datum *&ret)
 	return false;
 }
 
-Datum *Context::evalCons(Datum *datum, Scope *scope)
+Datum *Context::evalCons(Datum *datum, Scope *scope, Continuation &continuation, int frame)
 {
 	Datum *nil = mPool->newNone();
 	Datum *ret = nil;
 	Datum *prev = nil;
 	for (Datum *cons = datum; cons->type() == Datum::TypeCons; cons = cdr(cons)) {
-		Datum *item = eval(car(cons), scope);
+		Datum *item = evalDatum(car(cons), scope, continuation, frame + 1);
 		Datum *newCons = mPool->newCons(item, nil);
 		if (prev == nil) {
 			ret = newCons;
@@ -207,7 +221,7 @@ Datum *Context::evalCons(Datum *datum, Scope *scope)
 	return ret;
 }
 
-Datum *Context::evalLambda(Datum *lambda, Datum *args, Scope *scope)
+Datum *Context::evalLambda(Datum *lambda, Datum *args, Scope *scope, Continuation &continuation, int frame)
 {
 	std::map<std::string, Datum*> vars;
 	Datum *arg = args;
@@ -228,7 +242,7 @@ Datum *Context::evalLambda(Datum *lambda, Datum *args, Scope *scope)
 	Scope *newScope = new Scope(scope, std::move(vars));
 	Datum *ret = 0;
 	for (Datum *cons = lambda->lambdaValue().body; cons->type() == Datum::TypeCons; cons = cdr(cons)) {
-		ret = eval(car(cons), newScope);
+		ret = evalDatum(car(cons), newScope, continuation, frame + 1);
 	}
 	return ret;
 

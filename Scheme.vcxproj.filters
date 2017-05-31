@@ -34,6 +34,9 @@
     <ClCompile Include="DatumPool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Continuation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Error.hpp">
@@ -58,6 +61,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="DatumPool.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Continuation.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

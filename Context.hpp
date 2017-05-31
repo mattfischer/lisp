@@ -4,6 +4,7 @@
 #include "Datum.hpp"
 #include "Scope.hpp"
 #include "DatumPool.hpp"
+#include "Continuation.hpp"
 
 class Context {
 public:
@@ -14,10 +15,10 @@ public:
 	DatumPool *pool();
 
 private:
-	Datum *eval(Datum *datum, Scope *scope);
-	Datum *evalCons(Datum *datum, Scope *scope);
-	bool evalSpecialForm(Datum *datum, Scope *scope, Datum *&ret);
-	Datum *evalLambda(Datum *lambda, Datum *args, Scope *scope);
+	Datum *evalDatum(Datum *datum, Scope *scope, Continuation &continuation, int frame);
+	Datum *evalCons(Datum *datum, Scope *scope, Continuation &continuation, int frame);
+	bool evalSpecialForm(Datum *datum, Scope *scope, Datum *&ret, Continuation &continuation, int frame);
+	Datum *evalLambda(Datum *lambda, Datum *args, Scope *scope, Continuation &continuation, int frame);
 
 	void checkType(Datum *datum, Datum::Type type);
 

@@ -140,6 +140,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Context.cpp" />
+    <ClCompile Include="Continuation.cpp" />
     <ClCompile Include="Error.cpp" />
     <ClCompile Include="NativeFunctions.cpp" />
     <ClCompile Include="IO.cpp" />
@@ -151,6 +152,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Context.hpp" />
+    <ClInclude Include="Continuation.hpp" />
     <ClInclude Include="Error.hpp" />
     <ClInclude Include="NativeFunctions.hpp" />
     <ClInclude Include="IO.hpp" />
